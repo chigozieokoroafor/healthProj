@@ -1,5 +1,5 @@
 from urllib.robotparser import RequestRate
-from flask import Blueprint, Response, jsonify, request
+from flask import Blueprint, Response, jsonify, request, url_for, render_template_string, redirect
 import pymongo
 from folder.config import users
 from folder.functions import Authentication, secret_key
@@ -7,10 +7,14 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from pymongo.errors import DuplicateKeyError
 import jwt, bson, datetime,random, secrets
 from bson.errors import InvalidId
+from itsdangerous import URLSafeTimedSerializer, SignatureExpired
 
-cust_auth = Blueprint("cust_auth", __name__)
 
-@cust_auth.route("/createAccount", methods=["POST"])
+auth = Blueprint("auth", __name__, url_prefix="/api")
+s = URLSafeTimedSerializer(secret_key)
+
+
+@auth.route("/createAccount", methods=["POST"])
 def signup():
     info = request.json
     keys = [i for i in info.keys()]
@@ -27,12 +31,12 @@ def signup():
     data["pwd"] = pwd_hashed
     data["verified"] = False
     data["role"] = ["user"]
-    otp_data = Authentication.generate_otp()
-    data["otp_data"] = otp_data
     data["timestamp"] = datetime.datetime.now()
     data.pop("password")
+    token = s.dumps(email, salt="email_confirm")
+    link = url_for("auth.confirm_email", token=token, _external=True)
     try :
-        mail_send = Authentication.sendMail(email, otp_data["otp"])
+        mail_send = Authentication.sendMail(email, link)
         if mail_send["status"] == "success":
             users.insert_one(data)
         else:
@@ -43,7 +47,7 @@ def signup():
         return jsonify({"detail":"Email address already used","status":"fail"}), 400
     return jsonify(detail="account created successfully", status="success", verified=False), 200
     
-@cust_auth.route("/emailCheck", methods=["POST"])
+@auth.route("/emailCheck", methods=["POST"])
 def emailCheck():
     email = request.json.get("email")
 
@@ -55,7 +59,7 @@ def emailCheck():
     message = jsonify({"detail":"Email address can be used.","status":"success"}),200
     return message
 
-@cust_auth.route("/signin", methods=["POST"])
+@auth.route("/signin", methods=["POST"])
 def signin():
     info = request.json
     email = info.get("email")
@@ -77,7 +81,7 @@ def signin():
         
     return jsonify({"detail": f"Account not found for {email}", "status":"fail"}), 404
 
-@cust_auth.route("/sendOTP", methods=["POST"])
+@auth.route("/sendOTP", methods=["POST"])
 def send_otp():
     email = request.json.get("email")
     email_check = users.find({"email":email}).hint("email_1")
@@ -93,39 +97,17 @@ def send_otp():
 
     return jsonify({"detail":"Account with provided email not found", "status":"error"}), 404
 
-@cust_auth.route("/emailVerification", methods=["POST"])
+@auth.route("/emailVerification", methods=["POST"])
 def email_verification():
-    info = request.json
-    email = info.get("email")
-    otp = info.get("code")
-    get_user = users.find({"email":email}).hint("email_1") #use the index created here
-    user_list = list(get_user)
-    if len(user_list)>0:
-        user_check = user_list[0]
-        now = datetime.datetime.timestamp(datetime.datetime.now())
-        try:
-            start_time = user_check["otp_data"]["starttime"]
-            stop_time = user_check["otp_data"]["stoptime"]
-        except KeyError as e:
-            return jsonify({"detail":"OTP already used", "status":"error"}), 400
-        otp_verify = False
-        if stop_time > now > start_time :
-            if otp == user_check["otp_data"]["otp"]:
-                otp_verify = True
-            else: return jsonify({"detail":"Invalid OTP provided", "status":"fail"}), 400
-        else:
-            return jsonify(message="OTP Expired", status="error"), 400
-        
-        if otp_verify == True:
-            log_key = secrets.token_hex(32)
-            users.find_one_and_update({"email":email},{"$set":{"otp_data":{}, "verified":True, "login_key":log_key}})
-            data = {"email":email}
-            jwt_token = Authentication.generate_access_token(data,1)
-            return jsonify({"detail":"OTP Correct", "status":"success","token":jwt_token}), 200
-            
-    return jsonify({"detail":"Account with provided email not found", "status":"error"}), 404
+    email = request.json.get("email")
+    users.update_one({"email":email}, {"$set":{"verified":False}})
+    token = s.dumps(email, salt="email_confirm")
+    link = url_for("auth.confirm_email", token=token, _external=True)
+    Authentication.mailSend(email=email, link=link)
+    return jsonify({"detail":"use verification link sent to mail provided"}), 200
+    
 
-@cust_auth.route("/updatePassword", methods=["POST"])
+@auth.route("/updatePassword", methods=["POST"])
 @Authentication.token_required
 def newPassword():
     token = request.headers.get("Authorization")
@@ -145,3 +127,15 @@ def newPassword():
     
     return jsonify({"detail":"Password Updated Successfully", "status":"success"}), 200
 
+@auth.route("/confirm_email/<token>")
+def confirm_email(token):
+    try:
+            email = s.loads(token, salt="email_confirm", max_age=300 )
+            log_key = secrets.token_hex(32)
+            user = users.find_one({"email":email})
+            user_id = user["_id"]
+            users.find_one_and_update({"email":email},{"$set":{"verified":True}})
+            
+    except SignatureExpired:
+        return render_template_string("<h1> link expired </h1>")
+    return redirect("https://vbatrade.com/", 302)
