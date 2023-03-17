@@ -13,6 +13,17 @@ from functools import wraps
 from jwt.exceptions import ExpiredSignatureError, DecodeError
 from bson import ObjectId
 from folder.config import users
+from flask import render_template, render_template_string
+import os
+from dotenv import load_dotenv
+from sendgrid import SendGridAPIClient
+from sendgrid.helpers.mail import Mail, Content
+
+load_dotenv("./.env")
+
+grid_key= os.getenv("grid_key")
+
+
 
 secret_key = "FBSrzPmdkaLjjahzLahmpSEUGowxSBdarIvRBbgaGtgolvQrTuVldTYMDlpUesoa"
 
@@ -31,29 +42,25 @@ class Authentication:
         stop_time = datetime.datetime.timestamp(datetime.datetime.now() + expiry)
         return {"otp":otpcode, "stoptime":stop_time, "starttime":start_time}
     
-    def sendMail(email, otp_code):
+    def mailSend(email, temp):
+        # file = open("folder/templates/verification.html")
+        # template = file.read().format(code=otp_code or link, support_mail="support@vbatrade.com")
+            
+            
+        message = Mail(
+                from_email = "support@vbatrade.com",
+                to_emails = email,
+                subject = 'Email Verification Mail',
+                html_content = Content("text/html", content=temp))
         try:
-            email_sender = "okoroaforc14@gmail.com"
-            email_password = "weydnmjumtbtzvln"
-
-            email_reciever = email
-            #subject = "test"
-            file = open("folder/templates/verification.html")
-            subject = file.read().format(code=otp_code, support_mail="okoroaforc14@gmail.com")
-            
-            em = MIMEText(subject,"html")
-            em["From"] = email_sender
-            em["To"] = email_reciever
-            em["subject"] = "Test Mail"
-            
-
-            context = ssl.create_default_context()
-
-            with smtplib.SMTP_SSL("smtp.gmail.com", 465, context=context) as smtp:
-                smtp.login(email_sender, email_password)
-                smtp.sendmail(email_sender, email_reciever, em.as_string())
-            return {"detail":"verification mail sent", "status":"success"}
-        except smtplib.SMTPAuthenticationError as e:
+            sg = SendGridAPIClient(api_key=grid_key)
+            response = sg.send(message)
+            if response.status_code == 202:
+                return {"detail":"verification mail sent", "status":"success"}
+            else:
+                return {"detail":"error sending verification mail", "status":"fail"}
+        except Exception as e:
+            print(e)
             return {"detail":"error sending verification mail", "status":"fail"}
 
     def token_required(f):
