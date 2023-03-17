@@ -45,8 +45,9 @@ def signup():
     data.pop("password")
     token = s.dumps(email, salt="email_confirm")
     link = url_for("auth.confirm_email", token=token, _external=True)
+    temp = render_template("reset_mail.html", action_url=link)
     try :
-        mail_send = Authentication.sendMail(email, link)
+        mail_send = Authentication.mailSend(email, temp)
         if mail_send["status"] == "success":
             users.insert_one(data)
         else:
