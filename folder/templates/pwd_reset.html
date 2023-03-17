@@ -1,0 +1,31 @@
+<form class="usa-form" method="POST" action="{{post_url}}">
+    <legend class="usa-legend usa-legend--large">Reset password</legend>
+    <fieldset class="usa-fieldset">
+      <legend>Please enter your new password</legend>
+      <div class="usa-alert usa-alert--info usa-alert--validation">
+        <div class="usa-alert__body">
+          <h3 class="usa-alert__heading">Password information</h3>
+          <p class="usa-alert__text">
+            Length requirements<br />Character constraints, if any
+          </p>
+        </div>
+      </div>
+      
+      <label class="usa-label" for="newPassword">New Password</label>
+      <input
+        class="usa-input"
+        id="newPassword"
+        name="newPassword"
+        type="password"
+        
+      />
+      <label class="usa-label" for="password-reset">Confirm Password</label>
+      <input
+        class="usa-input"
+        id="password-reset"
+        name="confirmPassword"
+        type="password"
+      />
+      <input class="usa-button" type="submit" value="Reset password" />
+    </fieldset>
+  </form>

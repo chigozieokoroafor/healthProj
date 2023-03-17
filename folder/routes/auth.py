@@ -1,5 +1,5 @@
 from urllib.robotparser import RequestRate
-from flask import Blueprint, Response, jsonify, request, url_for, render_template_string, redirect, render_template
+from flask import Blueprint, Response, jsonify, request, url_for, render_template_string, redirect, render_template, flash
 import pymongo
 from folder.config import users
 from folder.functions import Authentication, secret_key
@@ -94,82 +94,49 @@ def signin():
         
     return jsonify({"detail": f"Account not found for {email}", "success":False}), 404
 
-# @auth.route("/sendOTP", methods=["POST"])
-# def send_otp():
-#     email = request.json.get("email")
-#     email_check = users.find({"email":email}).hint("email_1")
-#     email_list = list(email_check)
-#     if len(email_list) > 0:
-#         otp_data = Authentication.generate_otp()
-#         users.find_one_and_update({"email":email}, {"$set":{"otp_data":otp_data}})
-#         mail_send = Authentication.sendMail(email, otp_data["otp"])
-#         if mail_send["status"]=="success":
-#             return jsonify({"detail":"OTP sent", "success":True}), 200
-#         else:
-#             return jsonify({"detail":"Error occured while sending mail","success":False}),400
-
-#     return jsonify({"detail":"Account with provided email not found", "success":False}), 404
-
 @auth.route("/emailVerification", methods=["POST"])
 def email_verification():
     email = request.json.get("email")
     users.update_one({"email":email}, {"$set":{"verified":False}})
-    # token = s.dumps(email, salt="email_confirm")
-    # msg = Message()
-    # msg.subject = "Email Verification"
-    # msg.recipients = [email]
-    # # msg.sender = 'username@gmail.com'
-    # url = render_template("reset_mail", action_url="https://postmarkapp.com/transactional-email-templates/reset-password") 
-    # msg.body = url
-    # mail.send(msg)
-    
-    url = render_template("reset_mail.html", action_url="https://postmarkapp.com/transactional-email-templates/reset-password") 
+    token = s.dumps(email, salt="email_confirm")
+    url = url_for("auth.confirm_email", token=token, _external=True)
+    temp = render_template("reset_mail.html", action_url=url) 
     # link = url_for("auth.confirm_email", token=token, _external=True)
-    s = Authentication.mailSend(email, str(url))
-    if s["status"] == "success":
+    st = Authentication.mailSend(email, str(temp))
+    if st["status"] == "success":
         return jsonify({"detail":"use verification link sent to mail provided", "success":True}), 200
     else:
         return jsonify({"detail":"there was an error while sending verification mails, check back later", "success":False}), 400 
  
 
-@auth.route("/updatePassword", methods=["POST"])
-@Authentication.token_required
-def newPassword():
-    token = request.headers.get("Authorization")
-    data = jwt.decode(token, secret_key,algorithms=["HS256"])    
-    new_password = request.json.get("newPassword")
-    #data["newPassword"] = new_password
-    try:
-        email = data["email"]
-    except KeyError as e:
-        return jsonify({"detail":"Incorrect token provided", "success":False}), 401
-    user_cursor = users.find({"email":email}).hint("email_1")
-    user_list = list(user_cursor)
-    user = user_list[0]
-    choice_length = random.choice([16,32,64])
-    new_hash = generate_password_hash(new_password,salt_length=choice_length)
-    users.find_one_and_update({"_id":user["_id"]}, {"$set":{"pwd":new_hash}})
-    
-    return jsonify({"detail":"Password Updated Successfully", "success":True}), 200
 
 @auth.route("/confirm_email/<token>")
 def confirm_email(token):
     try:
         email = s.loads(token, salt="email_confirm", max_age=300 )
-        log_key = secrets.token_hex(32)
+        
         user = users.find_one({"email":email})
         if  user["first_timer"]== True:
             # user would be redirected to an email verification successful page
             users.find_one_and_update({"email":email},{"$set":{"verified":True}})
-            return render_template_string("<h1> success </h1>"), 200
+            return redirect("https://github.com"), 302
         else:
-            return render_template("reset_mail", action_url="https://postmarkapp.com/transactional-email-templates/reset-password") 
+            url = url_for("auth.resPass", token=token, _external=True)
+            return render_template("pwd_reset.html", post_url=url),  200
             # user would be redirected to password reset page
         
             
     except SignatureExpired:
         return render_template_string("<h1> link expired </h1>")
 
-@auth.route("passwordReset")
-def passwordRes():
-    render_template()
+
+@auth.route("/postPassword", methods=["POST"])
+def resPass():
+    if request.method == "POST":
+        token = request.args.get("token")
+        email = s.loads(token, salt="email_confirm", max_age=300 )
+        password = request.form.get("newPassword")
+        hashed_pwd = generate_password_hash(password, "pbkdf2:sha256")
+        users.update_one({"email":email}, {"$set":{"pwd":hashed_pwd, "verified":True}})
+        #email = request.form.get("ema")
+        return redirect("https://github.com"), 302
