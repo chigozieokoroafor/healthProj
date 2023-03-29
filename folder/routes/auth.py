@@ -63,7 +63,7 @@ def signup():
 def emailCheck():
     email = request.json.get("email")
 
-    email_check = users.find({"email":email}).hint("email_1")
+    email_check = users.find({"email":email})
     enail_list = list(email_check)
     if len(enail_list) > 0:
         message = jsonify({"detail":"Email address already used.", "success":False}), 400
