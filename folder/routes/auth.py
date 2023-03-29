@@ -10,7 +10,7 @@ from bson.errors import InvalidId
 from itsdangerous import URLSafeTimedSerializer, SignatureExpired
 from bson import ObjectId
 import os
-from flask_mail import Mail, Message
+# from flask_mail import Mail, Message
 
 
 template_folder = os.getcwd() + "/folder/templates"
@@ -120,7 +120,7 @@ def confirm_email(token):
         if  user["first_timer"]== True:
             # user would be redirected to an email verification successful page
             users.find_one_and_update({"email":email},{"$set":{"verified":True}})
-            return redirect("https://github.com"), 302
+            return redirect("https://github.com"), 302 # change this
         else:
             url = url_for("auth.resPass", token=token, _external=True)
             return render_template("pwd_reset.html", post_url=url),  200

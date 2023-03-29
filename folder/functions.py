@@ -16,14 +16,16 @@ from folder.config import users
 from flask import render_template, render_template_string
 import os
 from dotenv import load_dotenv
-from sendgrid import SendGridAPIClient
 from sendgrid.helpers.mail import Mail, Content
+from sendgrid import SendGridAPIClient
+
 
 load_dotenv("./.env")
 
 grid_key= os.getenv("grid_key")
 
-
+support_mail = "okoroaforc14@gmail.com"
+password = "fskrvckzpqiovmnd"
 
 secret_key = "FBSrzPmdkaLjjahzLahmpSEUGowxSBdarIvRBbgaGtgolvQrTuVldTYMDlpUesoa"
 
@@ -47,20 +49,45 @@ class Authentication:
         # template = file.read().format(code=otp_code or link, support_mail="support@vbatrade.com")
             
             
-        message = Mail(
-                from_email = "support@vbatrade.com",
-                to_emails = email,
-                subject = 'Email Verification Mail',
-                html_content = Content("text/html", content=temp))
+        # message = Mail(
+        #         from_email = "support@vbatrade.com",
+        #         to_emails = email,
+        #         subject = 'Email Verification Mail',
+        #         html_content = Content("text/html", content=temp))
+        # try:
+        #     sg = SendGridAPIClient(api_key=grid_key)
+        #     response = sg.send(message)
+        #     if response.status_code == 202:
+        #         return {"detail":"verification mail sent", "status":"success"}
+        #     else:
+        #         return {"detail":"error sending verification mail", "status":"fail"}
+        # except Exception as e:
+        #     print(e)
+        #     return {"detail":"error sending verification mail", "status":"fail"}
+
         try:
-            sg = SendGridAPIClient(api_key=grid_key)
-            response = sg.send(message)
-            if response.status_code == 202:
-                return {"detail":"verification mail sent", "status":"success"}
-            else:
-                return {"detail":"error sending verification mail", "status":"fail"}
-        except Exception as e:
-            print(e)
+            email_sender = support_mail
+            email_password = password
+
+            email_reciever = email
+            #subject = "test"
+            #file = open("other/verification.html")
+            # file = open("./backend/template/verification.html")
+            # subject = file.read().format(code=otp_code, support_mail=email_sender)
+            
+            em = MIMEText(temp,"html")
+            em["From"] = email_sender
+            em["To"] = email_reciever
+            em["subject"] = "Test Mail"
+            
+
+            context = ssl.create_default_context()
+
+            with smtplib.SMTP_SSL("smtp.gmail.com", 465, context=context) as smtp:
+                smtp.login(email_sender, email_password)
+                smtp.sendmail(email_sender, email_reciever, em.as_string())
+            return {"detail":"verification mail sent", "status":"success"}
+        except smtplib.SMTPAuthenticationError as e:
             return {"detail":"error sending verification mail", "status":"fail"}
 
     def token_required(f):
