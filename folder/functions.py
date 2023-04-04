@@ -22,7 +22,7 @@ from sendgrid import SendGridAPIClient
 
 load_dotenv("./.env")
 
-grid_key= os.getenv("grid_key")
+# grid_key= os.getenv("grid_key")
 
 support_mail = "okoroaforc14@gmail.com"
 password = "fskrvckzpqiovmnd"
@@ -38,13 +38,13 @@ class Authentication:
         return token
     
     def generate_otp():
-        otpcode = "".join(random.choices(string.digits, k=4))
-        expiry = datetime.timedelta(minutes=5.0)
+        otpcode = "".join(random.choices(string.digits, k=6))
+        expiry = datetime.timedelta(minutes=10.0)
         start_time = datetime.datetime.timestamp(datetime.datetime.now()) 
         stop_time = datetime.datetime.timestamp(datetime.datetime.now() + expiry)
         return {"otp":otpcode, "stoptime":stop_time, "starttime":start_time}
     
-    def mailSend(email, temp):
+    def mailSend(email, temp, mail_title):
         # file = open("folder/templates/verification.html")
         # template = file.read().format(code=otp_code or link, support_mail="support@vbatrade.com")
             
