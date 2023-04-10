@@ -114,7 +114,7 @@ def email_verification():
     if st["status"] == "success":
         return jsonify({"detail":"use verification link sent to mail provided", "success":True}), 200
     else:
-        return jsonify({"detail":"there was an error while sending verification mails, check back later", "success":False}), 400 
+        return jsonify({"detail":"There was an error while sending verification mails, check back later", "success":False}), 400 
  
 
 @auth.route("/confirm_email/<token>")
@@ -146,7 +146,8 @@ def resPass():
         hashed_pwd = generate_password_hash(password, "pbkdf2:sha256")
         users.update_one({"email":email}, {"$set":{"pwd":hashed_pwd, "verified":True}})
         #email = request.form.get("ema")
-        return redirect("https://github.com"), 302
+        # return redirect("https://github.com"), 302
+        return jsonify({"detail":"Password Successfully Updated", "success":True}), 200
 
 @auth.route("/sendOTP", methods=["POST"])
 def sendOTP():
