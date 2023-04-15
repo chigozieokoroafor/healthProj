@@ -32,6 +32,8 @@ def signup():
     try:
         email = data["email"]
         password = data["password"]
+        first_name = data["FName"]
+        last_name = data["LName"]
     except KeyError as e:
         return {"detail":f"{str(e)} field missing or empty", "success":False}, 400
 
