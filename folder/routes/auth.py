@@ -43,6 +43,17 @@ def signup():
     data["role"] = ["patient"]
     data["timestamp"] = datetime.datetime.now()
     data["first_timer"] = True
+    data["contact_info"] = {
+        "zipcode":"", 
+        "apartment_no":"", 
+        "city":"", 
+        "state":"", 
+        "country":"",
+        "phone":""
+    }
+    #  add this later on, encode it while uploading the data for payment information. 
+    # data["p_info"] = 
+
 
     data.pop("password")
     #token = s.dumps(email, salt="email_confirm")

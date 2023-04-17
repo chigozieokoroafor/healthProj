@@ -12,3 +12,4 @@ connection_string = os.getenv("connect_string")
 client = MongoClient(connection_string)
 db = client["healthManager"]
 users = db["users"]
+medical_info = db["medRecords"]
