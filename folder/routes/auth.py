@@ -76,7 +76,7 @@ def signup():
         
     except DuplicateKeyError as e:
         return jsonify({"detail":"Email address already used","success":False}), 400
-    return jsonify(detail="account created successfully", success=True, verified=False), 200
+    return jsonify(detail={"message":"account created successfully", "verified":False}, success=True), 200
 
 
 @auth.route("/emailCheck", methods=["POST"])
