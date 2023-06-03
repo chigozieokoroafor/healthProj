@@ -71,12 +71,12 @@ def signup():
         if mail_send["status"] == "success":
             users.insert_one(data)
         else:
-            return jsonify({"detail":"Error occured while creating account","success":False}), 400
+            return jsonify({"detail":{},"success":False, "message":"Error occured while creating account"}), 400
         #users.find_one_and_update({"email":email}, {"$set":{"otp_data":otp_data}})
         
     except DuplicateKeyError as e:
-        return jsonify({"detail":"Email address already used","success":False}), 400
-    return jsonify(detail={"message":"account created successfully", "verified":False}, success=True), 200
+        return jsonify({"detail":{},"success":False, "message":"Email address already used"}), 400
+    return jsonify(detail={"verified":False}, success=True, message="Account Created."), 200
 
 
 @auth.route("/emailCheck", methods=["POST"])
@@ -88,7 +88,7 @@ def emailCheck():
     if len(enail_list) > 0:
         message = jsonify({"detail":"Email address already used.", "success":False}), 400
         return message
-    message = jsonify({"detail":"Email address can be used.","success":True}),200
+    message = jsonify({"detail":{},"success":True, "message":"Email address can be used."}),200
     return message
 
 @auth.route("/signin", methods=["POST"])
@@ -111,9 +111,9 @@ def signin():
             user.pop("pwd")
             
             return jsonify({"detail":user, "success":True}), 200
-        return jsonify({"detail":"Email and password do not match", "success":False}), 401
+        return jsonify({"detail":{}, "success":False, "message":"Email and password do not match"}), 401
         
-    return jsonify({"detail": f"Account not found for {email}", "success":False}), 404
+    return jsonify({"detail": {}, "success":False, "message":f"Account not found for {email}"}), 404
 
 @auth.route("/emailVerification", methods=["POST"])
 def email_verification():
@@ -125,9 +125,9 @@ def email_verification():
     # link = url_for("auth.confirm_email", token=token, _external=True)
     st = Authentication.mailSend(email, str(temp), "Verify your account")
     if st["status"] == "success":
-        return jsonify({"detail":"use verification link sent to mail provided", "success":True}), 200
+        return jsonify({"detail":{}, "success":True, "message":"use verification link sent to mail provided"}), 200
     else:
-        return jsonify({"detail":"There was an error while sending verification mails, check back later", "success":False}), 400 
+        return jsonify({"detail":{}, "success":False, "message":"There was an error while sending verification mails, check back later"}), 400 
  
 
 @auth.route("/confirm_email/<token>")
@@ -160,7 +160,7 @@ def resPass():
         users.update_one({"email":email}, {"$set":{"pwd":hashed_pwd, "verified":True}})
         #email = request.form.get("ema")
         # return redirect("https://github.com"), 302
-        return jsonify({"detail":"Password Successfully Updated", "success":True}), 200
+        return jsonify({"detail":{}, "success":True, "message":"Password Successfully Updated"}), 200
 
 @auth.route("/sendOTP", methods=["POST"])
 def sendOTP():
@@ -173,8 +173,8 @@ def sendOTP():
         token = s.dumps(otp_Data, salt="otpData")
         Authentication.mailSend(email, temp, "OTP Verification")
         users.update_one({"email":email}, {"$set":{"s_t":token}})
-        return jsonify({"detail":"OTP Sent", "success":True}), 200
-    return jsonify({"detail":f"No account found for '{email}'", "success":False}), 400 
+        return jsonify({"detail":{}, "success":True, "message":"OTP Sent"}), 200
+    return jsonify({"detail":{}, "success":False, "message":f"No account found for '{email}'"}), 400 
 
 @auth.route("/verifyOTP", methods=["POST"])
 def verOTP():
@@ -192,6 +192,6 @@ def verOTP():
             verify = True
     if verify == True:
         users.update_one({"email":email}, {"$set":{"s_t":"", "verified":True}})
-        return jsonify({"detail":f"Account verified", "success":True}), 200
-    return jsonify({"detail":"Incorrect OTP", "success":False}), 400
+        return jsonify({"detail":{}, "success":True, "message":f"Account verified"}), 200
+    return jsonify({"detail":{}, "success":False, "message":"Incorrect OTP"}), 400
             
