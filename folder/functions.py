@@ -25,7 +25,7 @@ load_dotenv("./.env")
 # grid_key= os.getenv("grid_key")
 
 support_mail = "okoroaforc14@gmail.com"
-password = "fskrvckzpqiovmnd"
+password = "ecmhllyxrchptmqo"
 
 secret_key = "FBSrzPmdkaLjjahzLahmpSEUGowxSBdarIvRBbgaGtgolvQrTuVldTYMDlpUesoa"
 
