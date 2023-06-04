@@ -78,7 +78,7 @@ class Authentication:
             em = MIMEText(temp,"html")
             em["From"] = email_sender
             em["To"] = email_reciever
-            em["subject"] = "Test Mail"
+            em["subject"] = mail_title
             
 
             context = ssl.create_default_context()
