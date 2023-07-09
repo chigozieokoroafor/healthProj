@@ -11,7 +11,7 @@ from itsdangerous import URLSafeTimedSerializer, SignatureExpired
 from bson import ObjectId
 import os
 
-medicals = Blueprint("users", __name__, url_prefix="/api/medicals")
+medicals = Blueprint("meds", __name__, url_prefix="/api/medicals")
 
 # Medical history would be here.
 # Medical insurance check would also be here.
@@ -34,7 +34,7 @@ def medInfo():
         user_id = decoded_data["id"]
         user_type = decoded_data["u_type"]
     except:
-        return jsonify({"detail":"Unauthorized access", "success":False}), 400
+        return jsonify({"message":"Unauthorized access","detail":{}, "success":False}), 400
     refresh_t = ""
     user_check = users.find_one({"_id":ObjectId(user_id)})
     if user_check != None:
@@ -55,9 +55,9 @@ def medInfo():
             else:
                 medical_info.insert_one({"_id":ObjectId(user_id), "medTests":[data]})
 
-            return jsonify({"detail":"Medical Info updated", "success":True, "token":refresh_t}), 200
+            return jsonify({"message":"Medical Info updated", "detail":{},"success":True, "token":refresh_t}), 200
             
-    return jsonify({"detail":"Unauthorized Access", "success":False}), 400
+    return jsonify({"message":"Unauthorized Access", "detail":{}, "success":False}), 400
 
 #  Upload Test Results
 # require

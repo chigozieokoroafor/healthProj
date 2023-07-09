@@ -68,15 +68,15 @@ def contactInfo():
     user_check = users.find_one({"_id":ObjectId(user_id)})
     if user_check != None:
         if request.method == "GET":
-            popping_list = ["zipcode", "apartment_no", "city", "state", "country"]
+            popping_list = ["zipcode", "apartment_no", "city", "state", "country", "phone"]
             data = {}
             for i in popping_list:
                 data[i] = user_check[i]
 
-            return jsonify({"detail":user_check, 'success':True, "token":refresh_t}), 200
+            return jsonify({"detail":user_check, "message":"",'success':True, "token":refresh_t}), 200
     
         if request.method == "POST":
-            updateable_list = ["zipcode", "apartment_no", "city", "state", "country"]
+            updateable_list = ["zipcode", "apartment_no", "city", "state", "country", "phone", "address"]
             info = request.json
             data = {}
             for i in updateable_list:
@@ -84,7 +84,7 @@ def contactInfo():
                 if info_check != None:
                     data[i] = info_check
             users.update_one(data)
-            return jsonify({"detail":"Info updated", "success":True, "token":refresh_t}), 200
+            return jsonify({"message":"Info updated", "success":True, "token":refresh_t}), 200
 
 
     return jsonify({"detail":"Unauthorized Access", "success":False}), 400

@@ -1,0 +1,1 @@
+## this folder contains routes specific to service providers suc as nurses, doctors and other specialists.
