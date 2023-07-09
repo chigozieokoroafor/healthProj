@@ -1,9 +1,9 @@
 from flask import Flask
 from flask_cors import CORS
 from folder.functions import secret_key
-from folder.routes.auth import auth
-from folder.routes.users import base_user
-from folder.routes.medical_info import medicals
+from folder.routes.admin import admin
+from folder.routes.patients import patient
+from folder.routes.providers import provider
 # from flask_mail import Mail
 
 app = Flask(__name__)
@@ -18,6 +18,6 @@ app.config["SECRET_KEY"] = secret_key
 CORS(app)
 # Mail(app)
 
-app.register_blueprint(auth)
-app.register_blueprint(base_user)
-app.register_blueprint(medicals)
+app.register_blueprint(admin, url_prefix="/api/admin")
+app.register_blueprint(patient, url_prefix="/api/patient")
+app.register_blueprint(provider, url_prefix="/api/provider")
