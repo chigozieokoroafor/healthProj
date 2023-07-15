@@ -15,7 +15,7 @@ import os
 
 template_folder = os.getcwd() + "/folder/templates"
 
-auth = Blueprint("auth", __name__, url_prefix="/api", template_folder=template_folder)
+auth = Blueprint("auth", __name__, template_folder=template_folder)
 s = URLSafeTimedSerializer(secret_key)
 # mail = Mail(auth)
 
@@ -36,48 +36,50 @@ def signup():
         last_name = data["LName"]
     except KeyError as e:
         return {"detail":{}, "success":False, "message":f"{str(e)} field missing or empty"}, 400
+    user_check = users.find_one({"email":email})
+    if user_check == None:
+        pwd_hashed = generate_password_hash(password, salt_length=32)
+        data["pwd"] = pwd_hashed
+        data["verified"] = False
+        data["role"] = ["patient"]
+        data["timestamp"] = datetime.datetime.now()
+        data["first_timer"] = True
+        data["contact_info"] = {
+            "zipcode":"", 
+            "apartment_no":"", 
+            "city":"", 
+            "state":"", 
+            "country":"",
+            "phone":""
+        }
+        #  add this later on, encode it while uploading the data for payment information. 
+        # data["p_info"] = 
 
-    pwd_hashed = generate_password_hash(password, salt_length=32)
-    data["pwd"] = pwd_hashed
-    data["verified"] = False
-    data["role"] = ["patient"]
-    data["timestamp"] = datetime.datetime.now()
-    data["first_timer"] = True
-    data["contact_info"] = {
-        "zipcode":"", 
-        "apartment_no":"", 
-        "city":"", 
-        "state":"", 
-        "country":"",
-        "phone":""
-    }
-    #  add this later on, encode it while uploading the data for payment information. 
-    # data["p_info"] = 
 
-
-    data.pop("password")
-    #token = s.dumps(email, salt="email_confirm")
-    otp_Data = Authentication.generate_otp()
-    code = otp_Data["otp"]
-    temp = render_template("verification.html", code=code)
-    token = s.dumps(otp_Data, salt="otpData")
-    data["s_t"] = token
-    Authentication.mailSend(email, temp, "OTP Verification")
-    # users.update_one({"email":email}, {"$set":{"s_t":token}})
-    # link = url_for("auth.confirm_email", token=token, _external=True)
-    temp = render_template("verification.html", code=code)
-    try :
-        mail_send = Authentication.mailSend(email, temp, "Verify Your Account")
-        if mail_send["status"] == "success":
-            users.insert_one(data)
-        else:
-            return jsonify({"detail":{},"success":False, "message":"Error occured while creating account"}), 400
-        #users.find_one_and_update({"email":email}, {"$set":{"otp_data":otp_data}})
-        
-    except DuplicateKeyError as e:
-        return jsonify({"detail":{},"success":False, "message":"Email address already used"}), 400
-    return jsonify(detail={"verified":False}, success=True, message="Account Created. Check Email For Verification Mail."), 200
-
+        data.pop("password")
+        #token = s.dumps(email, salt="email_confirm")
+        otp_Data = Authentication.generate_otp()
+        code = otp_Data["otp"]
+        temp = render_template("verification.html", code=code)
+        token = s.dumps(otp_Data, salt="otpData")
+        data["s_t"] = token
+        Authentication.mailSend(email, temp, "OTP Verification")
+        # users.update_one({"email":email}, {"$set":{"s_t":token}})
+        # link = url_for("auth.confirm_email", token=token, _external=True)
+        temp = render_template("verification.html", code=code)
+        try :
+            mail_send = Authentication.mailSend(email, temp, "Verify Your Account")
+            if mail_send["status"] == "success":
+                users.insert_one(data)
+            else:
+                return jsonify({"detail":{},"success":False, "message":"Error occured while creating account"}), 400
+            #users.find_one_and_update({"email":email}, {"$set":{"otp_data":otp_data}})
+            
+        except DuplicateKeyError as e:
+            return jsonify({"detail":{},"success":False, "message":"Email address already used"}), 400
+        return jsonify(detail={"verified":False}, success=True, message="Account Created. Check Email For Verification Mail."), 200
+    else:
+        return jsonify(detail={}, success=False, message="Account with email address provided exists"), 400
 
 @auth.route("/emailCheck", methods=["POST"])
 def emailCheck():

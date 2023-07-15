@@ -11,12 +11,12 @@ from itsdangerous import URLSafeTimedSerializer, SignatureExpired
 from bson import ObjectId
 import os
 
-base_user = Blueprint("base_user", __name__, url_prefix="/api/user")
+base_user = Blueprint("base_user", __name__)
 
 @base_user.route("/userProfile", methods=["GET", "POST"])
 @Authentication.token_required
 def userProfile():
-    token = request.headers.get("token")
+    token = request.headers.get("Authorization")
     decoded_data = jwt.decode(token, secret_key,["HS256"])
     try:
         user_id = decoded_data["id"]
@@ -29,13 +29,13 @@ def userProfile():
     user_check = users.find_one({"_id":ObjectId(user_id)})
     if user_check != None:
         if request.method == "GET":
-            popping_list = ["s_t", "pwd", "timestamp", "_id"]
+            popping_list = ["s_t", "pwd", "timestamp", "_id", "verified"]
             for i in popping_list:
                 try:
                     user_check.pop(i)
                 except:
                     pass
-            return jsonify({"detail":user_check, 'success':True}), 200
+            return jsonify({"detail":user_check, 'success':True, "message":""}), 200
     
         if request.method == "POST":
             updateable_list = ["FName", "LName", "gender", "dob"]
@@ -45,23 +45,23 @@ def userProfile():
                 info_check = info.get(i)
                 if info_check != None:
                     data[i] = info_check
-            users.update_one(data)
-            return jsonify({"detail":"Info updated", "success":True}), 200
+            users.update_one({"_id":ObjectId(user_id)},{"$set":data})
+            return jsonify({"message":"Info updated", "success":True, 'detail':{}}), 200
 
 
-    return jsonify({"detail":"Unauthorized Access", "success":False}), 400
+    return jsonify({"message":"Unauthorized Access", "success":False, "detail":{}}), 400
 
 
 @base_user.route("/contactInformation", methods=["GET", "POST"])    
 @Authentication.token_required
 def contactInfo():
-    token = request.headers.get("token")
+    token = request.headers.get("Authorization")
     decoded_data = jwt.decode(token, secret_key,["HS256"])
     try:
         user_id = decoded_data["id"]
         user_type = decoded_data["u_type"]
     except:
-        return jsonify({"detail":"Unauthorized access", "success":False}), 400
+        return jsonify({"message":"Unauthorized access", "success":False, "detail":{}}), 400
 
     # create a refresh_token feature here
     refresh_t = ""
@@ -71,9 +71,9 @@ def contactInfo():
             popping_list = ["zipcode", "apartment_no", "city", "state", "country", "phone"]
             data = {}
             for i in popping_list:
-                data[i] = user_check[i]
+                data[i] = user_check["contact_info"][i]
 
-            return jsonify({"detail":user_check, "message":"",'success':True, "token":refresh_t}), 200
+            return jsonify({"detail":data, "message":"",'success':True, "token":refresh_t}), 200
     
         if request.method == "POST":
             updateable_list = ["zipcode", "apartment_no", "city", "state", "country", "phone", "address"]
@@ -82,12 +82,13 @@ def contactInfo():
             for i in updateable_list:
                 info_check = info.get(i)
                 if info_check != None:
-                    data[i] = info_check
-            users.update_one(data)
+                    data["contact_info."+ i] = info_check
+            for x in data.keys():
+                users.update_one({"_id":ObjectId(user_id)},{"$set":data})
             return jsonify({"message":"Info updated", "success":True, "token":refresh_t}), 200
 
 
-    return jsonify({"detail":"Unauthorized Access", "success":False}), 400
+    return jsonify({"message":"Unauthorized Access", "success":False, "detail":{}}), 400
 
 
 @base_user.route("/payment_info", methods=["GET", "POST"])

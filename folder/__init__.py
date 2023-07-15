@@ -4,6 +4,7 @@ from folder.functions import secret_key
 from folder.routes.admin import admin
 from folder.routes.patients import patient
 from folder.routes.providers import provider
+from folder.routes.auth import auth
 # from flask_mail import Mail
 
 app = Flask(__name__)
@@ -21,3 +22,4 @@ CORS(app)
 app.register_blueprint(admin, url_prefix="/api/admin")
 app.register_blueprint(patient, url_prefix="/api/patient")
 app.register_blueprint(provider, url_prefix="/api/provider")
+app.register_blueprint(auth, url_prefix="/api/auth")

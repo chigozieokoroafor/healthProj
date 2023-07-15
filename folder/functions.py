@@ -96,13 +96,13 @@ class Authentication:
             bearer_token = request.headers.get("Authorization")
             
             if not bearer_token:
-                return jsonify({"detail": "Token is missing","status":"error"}), 403
+                return jsonify({"message": "Token is missing","success":True}), 403
             try:          
                 data = jwt.decode(bearer_token, secret_key,algorithms=["HS256"])
             except ExpiredSignatureError as e:
-                return jsonify({"detail":"Token Expired", "status":"fail"}), 400
+                return jsonify({"message":"Token Expired", "succcess":False}), 400
             except DecodeError as d:
-                return jsonify({"detail":"Incorrect Token", "status":"fail"}), 400
+                return jsonify({"message":"Incorrect Token", "success":False}), 400
             return f(*args, **kwargs)
         return decorated
 

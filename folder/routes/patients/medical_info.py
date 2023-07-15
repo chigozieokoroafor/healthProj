@@ -11,7 +11,7 @@ from itsdangerous import URLSafeTimedSerializer, SignatureExpired
 from bson import ObjectId
 import os
 
-medicals = Blueprint("meds", __name__, url_prefix="/api/medicals")
+medicals = Blueprint("meds", __name__)
 
 # Medical history would be here.
 # Medical insurance check would also be here.
