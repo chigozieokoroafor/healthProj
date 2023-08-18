@@ -25,10 +25,11 @@ medicals = Blueprint("meds", __name__)
 # Sugeries and dates
 # Allergies
 # Medical conditions
+
 @medicals.route("/medicalInfo", methods=["GET", "POST"])
 @Authentication.token_required
 def medInfo():
-    token = request.headers.get("token")
+    token = request.headers.get("Authorization")
     decoded_data = jwt.decode(token, secret_key,["HS256"])
     try:
         user_id = decoded_data["id"]
@@ -39,7 +40,8 @@ def medInfo():
     user_check = users.find_one({"_id":ObjectId(user_id)})
     if user_check != None:
         if request.method == "GET":
-            pass
+            return "working"
+        
 
         if request.method == "POST":
             test_name = request.json.get("nameOfTest")
@@ -56,8 +58,9 @@ def medInfo():
                 medical_info.insert_one({"_id":ObjectId(user_id), "medTests":[data]})
 
             return jsonify({"message":"Medical Info updated", "detail":{},"success":True, "token":refresh_t}), 200
-            
-    return jsonify({"message":"Unauthorized Access", "detail":{}, "success":False}), 400
+
+    else:        
+        return jsonify({"message":"Unauthorized Access", "detail":{}, "success":False}), 400
 
 #  Upload Test Results
 # require

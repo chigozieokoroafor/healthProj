@@ -29,7 +29,7 @@ def userProfile():
     user_check = users.find_one({"_id":ObjectId(user_id)})
     if user_check != None:
         if request.method == "GET":
-            popping_list = ["s_t", "pwd", "timestamp", "_id", "verified"]
+            popping_list = ["s_t", "pwd", "timestamp", "_id", "verified", "first_timer"]
             for i in popping_list:
                 try:
                     user_check.pop(i)
@@ -56,7 +56,7 @@ def userProfile():
 @Authentication.token_required
 def contactInfo():
     token = request.headers.get("Authorization")
-    decoded_data = jwt.decode(token, secret_key,["HS256"])
+    decoded_data = jwt.decode(token, secret_key,algorithms=["HS256"])
     try:
         user_id = decoded_data["id"]
         user_type = decoded_data["u_type"]
@@ -83,8 +83,7 @@ def contactInfo():
                 info_check = info.get(i)
                 if info_check != None:
                     data["contact_info."+ i] = info_check
-            for x in data.keys():
-                users.update_one({"_id":ObjectId(user_id)},{"$set":data})
+            users.update_one({"_id":ObjectId(user_id)},{"$set":data})
             return jsonify({"message":"Info updated", "success":True, "token":refresh_t}), 200
 
 
@@ -95,6 +94,8 @@ def contactInfo():
 @Authentication.token_required
 def payment():
     pass
+
 # do route for phone number verification seperately
+ 
 
-
+ 
