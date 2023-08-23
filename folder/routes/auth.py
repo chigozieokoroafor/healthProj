@@ -17,9 +17,6 @@ template_folder = os.getcwd() + "/folder/templates"
 
 auth = Blueprint("auth", __name__, template_folder=template_folder)
 s = URLSafeTimedSerializer(secret_key)
-# mail = Mail(auth)
-
-
 
 
 @auth.route("/createAccount", methods=["POST"])
