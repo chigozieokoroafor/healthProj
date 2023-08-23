@@ -41,7 +41,7 @@ def signup():
         pwd_hashed = generate_password_hash(password, salt_length=32)
         data["pwd"] = pwd_hashed
         data["verified"] = False
-        data["role"] = ["patient"]
+        data["role"] = "patient"
         data["timestamp"] = datetime.datetime.now()
         data["first_timer"] = True
         data["contact_info"] = {
@@ -106,6 +106,7 @@ def signin():
         if pwd_check:
             user_id = str(bson.ObjectId(user["_id"]))
             d = {"id": user_id, "u_type":user["role"]}
+            print(d)
             token = Authentication.generate_access_token(d)
             user["token"] = token
             users.update_one({"_id":user["_id"]}, {"$set":{"first_timer":False}})
@@ -122,7 +123,7 @@ def email_verification():
     email = request.json.get("email")
     users.update_one({"email":email}, {"$set":{"verified":False}})
     token = s.dumps(email, salt="email_confirm")
-    url = url_for("auth.confirm_email", token=token, _external=True)
+    url = url_for("providers.auth.confirm_email", token=token, _external=True)
     temp = render_template("reset_mail.html", action_url=url) 
     # link = url_for("auth.confirm_email", token=token, _external=True)
     st = Authentication.mailSend(email, str(temp), "Verify your account")
@@ -131,7 +132,6 @@ def email_verification():
     else:
         return jsonify({"detail":{}, "success":False, "message":"There was an error while sending verification mails, check back later"}), 400 
  
-
 @auth.route("/confirm_email/<token>")
 def confirm_email(token):
     try:
@@ -143,7 +143,7 @@ def confirm_email(token):
             users.find_one_and_update({"email":email},{"$set":{"verified":True}})
             return redirect("https://github.com"), 302 # change this
         else:
-            url = url_for("auth.resPass", token=token, _external=True)
+            url = url_for("providers.auth.resPass", token=token, _external=True)
             return render_template("pwd_reset.html", post_url=url),  200
             # user would be redirected to password reset page
         
@@ -164,6 +164,7 @@ def resPass():
         # return redirect("https://github.com"), 302
         return jsonify({"detail":{}, "success":True, "message":"Password Successfully Updated"}), 200
 
+
 @auth.route("/sendOTP", methods=["POST"])
 def sendOTP():
     email = request.json.get("email")
@@ -177,6 +178,7 @@ def sendOTP():
         users.update_one({"email":email}, {"$set":{"s_t":token}})
         return jsonify({"detail":{}, "success":True, "message":"OTP Sent"}), 200
     return jsonify({"detail":{}, "success":False, "message":f"No account found for '{email}'"}), 400 
+
 
 @auth.route("/verifyOTP", methods=["POST"])
 def verOTP():

@@ -62,8 +62,3 @@ def medInfo():
     else:        
         return jsonify({"message":"Unauthorized Access", "detail":{}, "success":False}), 400
 
-#  Upload Test Results
-# require
-#    name of result 
-#    image of result 
-
