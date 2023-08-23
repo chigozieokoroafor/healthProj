@@ -7,6 +7,13 @@ load_dotenv("./.env")
 
 connection_string = os.getenv("connect_string")
 
+statuses = {
+    1: "Available",
+    2: "Unavailable", # this are tasks that have been picked
+    3: "Completed", # for completed tasks
+    4: ""
+}
+
 client = MongoClient(connection_string)
 db = client["healthManager"]
 users = db["users"]

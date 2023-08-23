@@ -101,5 +101,5 @@ class Authentication:
         return ""
 
 def gen_tag():
-    key = "TK_"+ "".join(random.choices(string.ascii_letters, k=4))
+    key = "JOB_"+ "".join(random.choices(string.ascii_letters, k=6))
     return key
