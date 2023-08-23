@@ -7,6 +7,7 @@ from datetime import datetime
 
 user_jobs = Blueprint("user_jobs", __name__)
 
+
 @user_jobs.route("/shifts", methods=["GET", "POST", "DELETE"])
 @Authentication.token_required
 def sh():
@@ -25,27 +26,33 @@ def sh():
         if request.method == "GET":
             shift_type = request.args.get("type")
             users_shifts = shifts.find({"creator_id":user_id})
+            users_shifts = list(users_shifts)
             try:
-                all_shifts = users_shifts["shifts"]
+                
                 if shift_type == "active" or  shift_type == None:
-                    shift_list = list(filter(lambda i: i["status"]=="active", all_shifts))
+                    shift_list = list(filter(lambda i: i["status"]=="active", users_shifts))
                 else:
-                    shift_list = list(filter(lambda i: i["status"]!="active", all_shifts))
+                    shift_list = list(filter(lambda i: i["status"]!="active", users_shifts))
 
-                # for i in shift_list:
-                #     i.pop
-                return jsonify({"message":"", "detail":{"shifts":shift_list},"success":True, "token":refresh_t}), 200
+                message = ""
+                if len(shift_list) <=  0 and shift_type == "active":
+                    message = "No active jobs available"
+                elif len(shift_list) <=  0 and shift_type != "active":
+                    message = "No jobs have been completed"
+                
+
+                return jsonify({"message":message, "detail":{"shifts":shift_list},"success":True, "token":refresh_t}), 200
             except TypeError as e:
-                return jsonify({"message":"No active jobs created", "detail":{}, "success":True, "token":refresh_t}), 200
+                # print(e)
+                return jsonify({"message":"No active jobs created", "detail":{"shifts":[]}, "success":True, "token":refresh_t}), 200
             
         if request.method == "POST":
             info =  request.json
             data =  {
-                "description":info.get("task"),
+                "description":info.get("description"),
                 "start_time":info.get("start_time"),
                 "end_time":info.get("end_time"),
                 "start_date":info.get("start_date"),
-                "end_date":info.get("end_date"),
                 "provider_category":info.get("provider_category"),
                 "tasks_list":[], # will contain task and completed.
                 "provider_details":{"name":"",
@@ -53,8 +60,8 @@ def sh():
                 "price_per_hour":info.get("price_per_hour"),
                 "status":"active",
                 "timestamp":datetime.timestamp(datetime.utcnow()),
-                "job_id":gen_tag(),
-                "current_status":"not_picked"
+                "_id":gen_tag(),
+                "current_status":1
             }
 
             tasks = info.get("tasks_list")  # list
@@ -68,18 +75,9 @@ def sh():
                     ls.append(task_data)
 
             data["tasks_list"] = ls
+            data["creator_id"] = user_id
 
-            shift_check = shifts.find_one({"_id":ObjectId(user_id)})
-            if shift_check == None:
-                shifts.insert_one({
-                    "_id":ObjectId(user_id),
-                    "shifts":[
-                        data
-                    ]
-                })
-            else:
-                shifts.update_one({"_id":ObjectId(user_id)}, {"$push":{"shifts":data}})
-
+            shifts.insert_one(data)
             return jsonify({"message":"Job uploaded", "detail":{},"success":True, "token":refresh_t}), 200
       
         if request.method == "DELETE": # to cancel.
@@ -113,7 +111,7 @@ def specJob(job_id):
         # users_shifts = shifts.find_one({"_id":ObjectId(user_id)})
         # try:
         #     shift_data = list(filter(lambda i: i['job_id']==job_id, users_shifts["shifts"]))
-        shift_data = shifts.find({"_id":job_id})
+        shift_data = shifts.find_one({"_id":job_id})
         if shift_data == None:
             return jsonify({"message":"Shift unavailable", "detail":{}, "success":True, "token":refresh_t}), 200
         shift_data.pop("creator_id")
