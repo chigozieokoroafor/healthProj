@@ -31,8 +31,14 @@ def signup():
         password = data["password"]
         first_name = data["FName"]
         last_name = data["LName"]
+        role =  data["role"]
     except KeyError as e:
         return {"detail":{}, "success":False, "message":f"{str(e)} field missing or empty"}, 400
+    
+    roles =  ["patient", "admin", "worker"]
+    if data["role"] not in roles:
+        return jsonify({"detail":{}, "success":False})
+
     user_check = users.find_one({"email":email})
     if user_check == None:
         pwd_hashed = generate_password_hash(password, salt_length=32)
