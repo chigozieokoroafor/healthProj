@@ -100,6 +100,30 @@ class Authentication:
             return t
         return ""
 
+    def tokenExpCheck(exp:float, data:dict):
+        now = datetime.datetime.now()
+
+        #convert exp to datetime
+        exp_date = datetime.datetime.fromtimestamp(exp)
+
+        diff =  exp_date - now
+        
+        if diff.total_seconds() < 300:
+            
+            user_data = users.find_one({"_id":ObjectId(data["id"])})
+            token = ""
+            if user_data != None:
+                roles = user_data["role"]
+
+                new_exp = datetime.datetime.now() + datetime.timedelta(minutes=60)
+                data["exp"] = datetime.datetime.timestamp(new_exp)
+                data["role"] = roles
+                token = Authentication.generate_access_token(data)
+
+        else:
+            token = ""
+        
+        return token
 def gen_tag():
     key = "JOB_"+ "".join(random.choices(string.ascii_letters, k=6))
     return key
