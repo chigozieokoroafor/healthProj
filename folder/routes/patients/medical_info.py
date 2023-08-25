@@ -30,13 +30,14 @@ medicals = Blueprint("meds", __name__)
 @Authentication.token_required
 def medInfo():
     token = request.headers.get("Authorization")
-    decoded_data = jwt.decode(token, secret_key,["HS256"])
+    decoded_data = jwt.decode(token, secret_key,algorithms=["HS256"])
+    refresh_t = Authentication.tokenExpCheck(decoded_data["exp"], decoded_data)
     try:
         user_id = decoded_data["id"]
         user_type = decoded_data["u_type"]
     except:
-        return jsonify({"message":"Unauthorized access","detail":{}, "success":False}), 400
-    refresh_t = ""
+        return jsonify({"message":"Unauthorized access", "success":False, "detail":{}}), 400
+    
     user_check = users.find_one({"_id":ObjectId(user_id)})
     if user_check != None:
         if request.method == "GET":

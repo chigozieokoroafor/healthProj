@@ -103,7 +103,7 @@ def signin():
         if pwd_check:
             user_id = str(bson.ObjectId(user["_id"]))
             d = {"id": user_id, "u_type":user["role"]}
-            print(d)
+            # print(d)
             token = Authentication.generate_access_token(d)
             user["token"] = token
             users.update_one({"_id":user["_id"]}, {"$set":{"first_timer":False}})

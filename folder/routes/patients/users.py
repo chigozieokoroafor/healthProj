@@ -29,7 +29,7 @@ def userProfile():
     user_check = users.find_one({"_id":ObjectId(user_id)})
     if user_check != None:
         if request.method == "GET":
-            popping_list = ["s_t", "pwd", "timestamp", "_id", "verified", "first_timer"]
+            popping_list = ["s_t", "pwd", "timestamp", "_id", "verified", "first_timer", "contact_info"]
             for i in popping_list:
                 try:
                     user_check.pop(i)
@@ -57,6 +57,7 @@ def userProfile():
 def contactInfo():
     token = request.headers.get("Authorization")
     decoded_data = jwt.decode(token, secret_key,algorithms=["HS256"])
+    refresh_t = Authentication.tokenExpCheck(decoded_data["exp"], decoded_data)
     try:
         user_id = decoded_data["id"]
         user_type = decoded_data["u_type"]
@@ -64,7 +65,6 @@ def contactInfo():
         return jsonify({"message":"Unauthorized access", "success":False, "detail":{}}), 400
 
     # create a refresh_token feature here
-    refresh_t = ""
     user_check = users.find_one({"_id":ObjectId(user_id)})
     if user_check != None:
         if request.method == "GET":
@@ -87,7 +87,7 @@ def contactInfo():
             return jsonify({"message":"Info updated", "success":True, "token":refresh_t}), 200
 
 
-    return jsonify({"message":"Unauthorized Access", "success":False, "detail":{}}), 400
+    return jsonify({"message":"Unauthorized Access", "success":False, "detail":{}, "token":""}), 400
 
 
 @base_user.route("/payment_info", methods=["GET", "POST"])
