@@ -1,6 +1,6 @@
 from  pymongo import MongoClient
 from dotenv import load_dotenv
-import os 
+import os, pymongo
 
 
 load_dotenv("./.env")
@@ -22,3 +22,5 @@ credentials =  db["cred"]
 shifts = db["jobs"]
 misc =  db["misc"]
 exp_cert = db["exp_cert"]
+
+users.create_index("email", unique=True)
