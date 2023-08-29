@@ -23,7 +23,7 @@ def handleShifts():
     if user_check != None:
         if request.method == "GET":
             page = request.args.get("page")
-            offset = 20
+            offset = 10
             if page==None:
                 page = 1
             else:
