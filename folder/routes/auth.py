@@ -68,6 +68,10 @@ def signup():
         }
         
         data.pop("password")
+        try:
+            data.pop("admin_key")
+        except:
+            pass
         otp_Data = Authentication.generate_otp()
         code = otp_Data["otp"]
         temp = render_template("verification.html", code=code, year=datetime.datetime.utcnow().year)
