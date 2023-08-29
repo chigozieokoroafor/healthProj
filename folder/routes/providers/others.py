@@ -25,7 +25,7 @@ def home():
         wallet_balance =  0.0
         completed_shifts = shifts.count_documents({"provider_details.user_id":user_id, "current_status":3})
         try:
-            user_cat = user_check["category"]
+            user_cat = user_check["category"] #very important.
         except KeyError as e:
             return jsonify({"detail":{}, "message":"User not a service provider not found", "success":False}), 400
         cat_shifts = list(shifts.aggregate(
@@ -60,7 +60,7 @@ def certs():
         return jsonify({"message":"Unauthorized access", "success":False, "detail":{}}), 400
 
     user_check = users.find_one({"_id":ObjectId(user_id), "role":"worker"})
-    if user_check != None and user_type == "worker":
+    if user_check != None :
         if request.method == "GET":
             check = credentials.find_one({"_id":ObjectId(user_id)})
             if check != None:
@@ -87,7 +87,12 @@ def certs():
             return jsonify({"message":"Credential uploaded", "success":True, "detail":{}, "token":refresh_t}), 200
     else:
         return jsonify({"message":"User not a service provider.", "success":False, "detail":{}}), 400
- 
+
+@others.route("/categories", methods=["POST", "GET"])
+@Authentication.token_required
+def catSel():
+    pass
+
 @others.route("/profile_info", methods = ["GET", "POST"])
 @Authentication.token_required
 def profile():

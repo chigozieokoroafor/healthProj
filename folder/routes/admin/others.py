@@ -30,7 +30,7 @@ def provCat():
         return jsonify({"message":"Unauthorized access", "success":False}), 400
     admin_check = users.find_one({"_id":ObjectId(user_id), "role":"admin"})
 
-    if "admin" in user_type and admin_check!= None:
+    if admin_check!= None:
         if request.method == "GET":
             it_check = misc.find_one({"tag":"categories"})
             try:

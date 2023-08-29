@@ -45,6 +45,8 @@ def signup():
         # user_check = users.find_one({"email":email, "role":"admin"})
         fetch_key =  misc.find_one({"tag":"admin_key"})
         admin_key = request.json.get("admin_key")
+        if admin_key == None:
+            return jsonify({"detail":{}, "success":False, "message":"kindly provide admin_key parameter with appropriate admin secret key"}), 400
         pwd_check = check_password_hash(fetch_key["key"],admin_key)
         if pwd_check == False:
             return jsonify({"detail":{}, "success":False, "message":"Invalid key provided. Kindly request an admin to grant you access"}), 400
