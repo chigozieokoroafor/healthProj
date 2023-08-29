@@ -66,6 +66,7 @@ def signup():
             "country":"",
             "phone":""
         }
+        data["img_url"] = "https://res.cloudinary.com/dgpnmwhra/image/upload/v1674042300/neutron_images/base_photo_rqyzlb.png"
         
         data.pop("password")
         try:

@@ -20,7 +20,7 @@ def home():
     except:
         return jsonify({"message":"Unauthorized access", "success":False, "detail":{}}), 400
     
-    user_check = users.find_one({"_id":ObjectId(user_id), "role":user_type})
+    user_check = users.find_one({"_id":ObjectId(user_id), "role":"worker"})
     if user_check != None:
         wallet_balance =  0.0
         completed_shifts = shifts.count_documents({"provider_details.user_id":user_id, "current_status":3})
@@ -30,7 +30,8 @@ def home():
             return jsonify({"detail":{}, "message":"User not a service provider not found", "success":False}), 400
         cat_shifts = list(shifts.aggregate(
             [
-                {"$match":{"provider_category":user_cat}},
+                {"$match":{"provider_category":user_cat,
+                           "current_status":1}},
                 {"$sample":{"size":5}}
             ]
             )
@@ -39,7 +40,7 @@ def home():
             i.pop("creator_id")
         data = {
             "wallet_balance":wallet_balance,
-            "completed_shifts":completed_shifts,
+            "completed_shifts":completed_shifts, # this is a integer
             "avail_shifts": cat_shifts
         }
         return jsonify({"detail":data, "message":"", "success":True, "token":refresh_t}), 200
@@ -87,3 +88,28 @@ def certs():
     else:
         return jsonify({"message":"User not a service provider.", "success":False, "detail":{}}), 400
  
+@others.route("/profile_info", methods = ["GET", "POST"])
+@Authentication.token_required
+def profile():
+    token = request.headers.get("Authorization")
+    decoded_data = jwt.decode(token, secret_key,algorithms=["HS256"])
+    refresh_t = Authentication.tokenExpCheck(decoded_data["exp"], decoded_data)
+    try:
+        user_id = decoded_data["id"]
+        # user_type = decoded_data["u_type"]
+    except:
+        return jsonify({"message":"Unauthorized access", "success":False, "detail":{}}), 400
+
+    user_check = users.find_one({"_id":ObjectId(user_id), "role":"worker"})
+    if user_check != None:
+        if request.method == "POST":
+            pass
+        if request.method == "GET":
+            data = {
+                "FName":user_check["FName"],
+                "LName":user_check["LName"],
+                "email":user_check["email"],
+                "phone_no":user_check["contact_info"]["phone"]
+            }
+    else:
+        return
