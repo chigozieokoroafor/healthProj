@@ -8,16 +8,18 @@ from email.mime.text import MIMEText
 from mimetypes import MimeTypes
 import smtplib, ssl
 from email import contentmanager
-from flask import request, jsonify
+from flask import request, jsonify, render_template
 from functools import wraps
 from jwt.exceptions import ExpiredSignatureError, DecodeError
 from bson import ObjectId
-from folder.config import users
+from folder.config import users, misc
 # from flask import render_template, render_template_string
 import os
 from dotenv import load_dotenv
 from sendgrid.helpers.mail import Mail, Content
 from sendgrid import SendGridAPIClient
+from werkzeug.security import generate_password_hash
+
 
 
 load_dotenv("./.env")
@@ -124,6 +126,52 @@ class Authentication:
             token = ""
         
         return token
+
 def gen_tag():
     key = "JOB_"+ "".join(random.choices(string.ascii_letters, k=6))
     return key
+
+# turn this to a cron job later on.
+def create_admin_key():
+    def mailSend(email,admin_key, mail_title):
+        try:
+            email_sender = "okoroaforc14@gmail.com"
+            email_password = "ecmhllyxrchptmqo"
+
+            email_reciever = email
+            template_folder = os.getcwd() + "/folder/templates/admin_mail.html"
+            # file = open("./templates/admin_mail.html")
+            file = open(template_folder)
+            mail = file.read().format(code=admin_key, support_mail=email_sender, date=datetime.datetime.utcnow().year)
+            
+            em = MIMEText(mail,"html")
+            em["From"] = email_sender
+            em["To"] = email_reciever
+            em["subject"] = "Updated Admin Key"
+            
+
+            context = ssl.create_default_context()
+
+            with smtplib.SMTP_SSL("smtp.gmail.com", 465, context=context) as smtp:
+                smtp.login(email_sender, email_password)
+                smtp.sendmail(email_sender, email_reciever, em.as_string())
+            return {"detail":"verification mail sent", "status":"success"}
+        except smtplib.SMTPAuthenticationError as e:
+            return {"detail":"error sending verification mail", "status":"fail"}
+        
+    key = "".join(random.choices(string.ascii_uppercase, k=3)) + "".join(random.choices(string.digits, k=4))
+    hashed_password =  generate_password_hash(key, method="pbkdf2:sha256", salt_length=32)
+    check = misc.find_one({"tag":"admin_key"})
+    mailSend("okoroaforc14@gmail.com",key ,"Update key") # to always send me the key incase of issues.
+    cursor = users.find({"role":"admin"})
+    admins_ = list(cursor)
+    if len(admins_)>0:
+        for i in admins_ :
+            mailSend(i["email"],key ,"Update key")
+    if check == None:
+        
+            misc.insert_one({"tag":"admin_key", "key":hashed_password})
+
+    else:
+        misc.update_one({"tag":"admin_key"}, {"$set":{"key":hashed_password}})
+        

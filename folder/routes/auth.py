@@ -1,7 +1,7 @@
 from urllib.robotparser import RequestRate
 from flask import Blueprint, Response, jsonify, request, url_for, render_template_string, redirect, render_template, flash
 import pymongo
-from folder.config import users
+from folder.config import users, misc
 from folder.functions import Authentication, secret_key
 from werkzeug.security import generate_password_hash, check_password_hash
 from pymongo.errors import DuplicateKeyError
@@ -37,14 +37,25 @@ def signup():
     
     roles =  ["patient", "admin", "worker"]
     if data["role"] not in roles:
-        return jsonify({"detail":{}, "success":False})
-
+        return jsonify({"detail":{}, "success":False, "message":"Kindly specify a role; service_provider or patient"}), 400
     user_check = users.find_one({"email":email})
+    # if role == "patient" or role == "worker":
+        
+    if role == "admin":
+        # user_check = users.find_one({"email":email, "role":"admin"})
+        fetch_key =  misc.find_one({"tag":"admin_key"})
+        admin_key = request.json.get("admin_key")
+        pwd_check = check_password_hash(fetch_key["key"],admin_key)
+        if pwd_check == False:
+            return jsonify({"detail":{}, "success":False, "message":"Invalid key provided. Kindly request an admin to grant you access"}), 400
+
+
+
     if user_check == None:
         pwd_hashed = generate_password_hash(password, salt_length=32)
         data["pwd"] = pwd_hashed
         data["verified"] = False
-        data["role"] = "patient"
+        data["role"] = role
         data["timestamp"] = datetime.datetime.now()
         data["first_timer"] = True
         data["contact_info"] = {
@@ -55,32 +66,25 @@ def signup():
             "country":"",
             "phone":""
         }
-        #  add this later on, encode it while uploading the data for payment information. 
-        # data["p_info"] = 
-
-
+        
         data.pop("password")
-        #token = s.dumps(email, salt="email_confirm")
         otp_Data = Authentication.generate_otp()
         code = otp_Data["otp"]
-        temp = render_template("verification.html", code=code)
+        temp = render_template("verification.html", code=code, year=datetime.datetime.utcnow().year)
         token = s.dumps(otp_Data, salt="otpData")
         data["s_t"] = token
-        Authentication.mailSend(email, temp, "OTP Verification")
-        # users.update_one({"email":email}, {"$set":{"s_t":token}})
-        # link = url_for("auth.confirm_email", token=token, _external=True)
-        # temp = render_template("verification.html", code=code)
+        
         try :
             mail_send = Authentication.mailSend(email, temp, "Verify Your Account")
             if mail_send["status"] == "success":
                 users.insert_one(data)
             else:
-                return jsonify({"detail":{},"success":False, "message":"Error occured while creating account"}), 400
-            #users.find_one_and_update({"email":email}, {"$set":{"otp_data":otp_data}})
-            
+                return jsonify({"detail":{},"success":False, "message":"Error occured while creating account"}), 400   
+                      
         except DuplicateKeyError as e:
             return jsonify({"detail":{},"success":False, "message":"Email address already used"}), 400
         return jsonify(detail={"verified":False}, success=True, message="Account Created. Check Email For Verification Mail."), 200
+    
     else:
         return jsonify(detail={}, success=False, message="Account with email address provided exists"), 400
 
@@ -112,11 +116,20 @@ def signin():
             # print(d)
             token = Authentication.generate_access_token(d)
             user["token"] = token
+            message = ""
+            if user["verified"] == False:
+                user["token"] = ""
+                message = "Kindly verify email address"
+                return jsonify({"detail":{"verified":False}, "success":True, "message":message}), 200
             users.update_one({"_id":user["_id"]}, {"$set":{"first_timer":False}})
             user.pop("_id")
             user.pop("pwd")
+            try:
+                user.pop("s_t")
+            except:
+                pass
             
-            return jsonify({"detail":user, "success":True}), 200
+            return jsonify({"detail":user, "success":True, "message":message}), 200
         return jsonify({"detail":{}, "success":False, "message":"Email and password do not match"}), 401
         
     return jsonify({"detail": {}, "success":False, "message":f"Account not found for {email}"}), 404
