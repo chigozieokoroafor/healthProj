@@ -24,3 +24,5 @@ misc =  db["misc"]
 exp_cert = db["exp_cert"]
 
 users.create_index("email", unique=True)
+
+default_image_url = "https://res.cloudinary.com/dgpnmwhra/image/upload/v1674042300/neutron_images/base_photo_rqyzlb.png"

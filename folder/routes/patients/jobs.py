@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify 
-from folder.config import shifts, users, misc
+from folder.config import shifts, users, misc, default_image_url
 from folder.functions import Authentication, secret_key, gen_tag
 import jwt
 from bson import ObjectId
@@ -56,7 +56,8 @@ def sh():
                 "provider_category":info.get("provider_category"),
                 "tasks_list":[], # will contain task and completed.
                 "provider_details":{"name":"",
-                                    "user_id":""},
+                                    "user_id":"",
+                                    "img_url":default_image_url},
                 "price_per_hour":info.get("price_per_hour"),
                 "status":"active",
                 "timestamp":datetime.timestamp(datetime.utcnow()),
@@ -75,7 +76,11 @@ def sh():
                     ls.append(task_data)
 
             data["tasks_list"] = ls
-            data["creator_id"] = user_id
+            data["creator_details"] = {
+                "_id":user_id,
+                "name":f'{check["FName"] } {check["LName"]}',
+                "img_url":check["img"]
+            }
 
             shifts.insert_one(data)
             return jsonify({"message":"Job uploaded", "detail":{},"success":True, "token":refresh_t}), 200

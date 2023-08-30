@@ -45,7 +45,7 @@ def fetchAllShifts():
         if request.method == "POST":
             shift_id = request.json.get("_id")
             shifts.update_one({"_id":shift_id}, {"$set":{"provider_details.name":f'{user_check["FName"]} {user_check["LName"]}', "provider_details.user_id":user_id, "provider_details.img_url":user_check["image_url"]}})
-
+            return jsonify({"message":"Shift accepted", "success":True, "detail":{}, "token":refresh_t}), 200
     else:
         return  jsonify({"message":"Unauthorized Access", "success":False, "detail":{}}), 400
     
@@ -65,11 +65,12 @@ def handleShifts(shift_id):
     if user_check != None:
         if request.method == "GET":
             check = shifts.find_one({"_id":shift_id})
+            # popping_items = [""]
             return jsonify({"message":"", "success":True, "detail":check}), 200
 
         if request.method == "PUT":
             pass
 
-        if request.method == "DELETE":
-            pass
+        if request.method == "DELETE": # this is to quit a particular shift.
+            shifts.update_one({"_id":shift_id}, {"$set":{"provider_details.name":"", "provider_details.user_id":"", "provider_details.img_url":user_check["image_url"]}})
 
