@@ -1,4 +1,4 @@
-from folder.config import users, shifts
+from folder.config import users, shifts, default_image_url
 from folder.functions import Authentication, secret_key
 from flask import Blueprint, request, jsonify
 import jwt
@@ -66,11 +66,12 @@ def handleShifts(shift_id):
         if request.method == "GET":
             check = shifts.find_one({"_id":shift_id})
             # popping_items = [""]
-            return jsonify({"message":"", "success":True, "detail":check}), 200
+            return jsonify({"message":"", "success":True, "detail":check, "token":refresh_t}), 200
 
-        if request.method == "PUT":
+        if request.method == "PUT": # to update the progress or status of task
             pass
 
         if request.method == "DELETE": # this is to quit a particular shift.
-            shifts.update_one({"_id":shift_id}, {"$set":{"provider_details.name":"", "provider_details.user_id":"", "provider_details.img_url":user_check["image_url"]}})
-
+            shifts.update_one({"_id":shift_id}, {"$set":{"provider_details.name":"", "provider_details.user_id":"", "provider_details.img_url":default_image_url}})
+            return jsonify({"message":"Successfully ", "success":True, "detail":{}, "token":refresh_t}), 200
+        

@@ -79,7 +79,7 @@ def sh():
             data["creator_details"] = {
                 "_id":user_id,
                 "name":f'{check["FName"] } {check["LName"]}',
-                "img_url":check["img"]
+                "img_url":check["img_url"]
             }
 
             shifts.insert_one(data)
