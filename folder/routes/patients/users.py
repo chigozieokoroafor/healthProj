@@ -48,7 +48,7 @@ def userProfile():
             users.update_one({"_id":ObjectId(user_id)},{"$set":data})
             return jsonify({"message":"Info updated", "success":True, 'detail':{}}), 200
 
-
+ 
     return jsonify({"message":"Unauthorized Access", "success":False, "detail":{}}), 400
 
 

@@ -39,8 +39,8 @@ def fetchAllShifts():
 
             return jsonify({"message":"", "success":True, "detail":{"shifts":ls}, "token":refresh_t}), 200
 
-        if request.method == "POST":
-            shift_id = request.json.get("_id")
+        if request.method == "POST": # this is used to accept shifts
+            shift_id = request.json.get("shift_id")
             shifts.update_one({"_id":shift_id}, {"$set":{"provider_details.name":f'{user_check["FName"]} {user_check["LName"]}', "provider_details.user_id":user_id, "provider_details.img_url":user_check["image_url"]}})
             return jsonify({"message":"Shift accepted", "success":True, "detail":{}, "token":refresh_t}), 200
     
@@ -63,7 +63,7 @@ def handleShifts(shift_id):
     if user_check != None:
         if request.method == "GET":
             check = shifts.find_one({"_id":shift_id})
-            popping_items = ["provider_details", "status", "timestamp", "current_status", "tasks_list"]
+            popping_items = ["provider_details", "status", "timestamp", "current_status"]
             for x in popping_items:
                 check.pop(x)
             return jsonify({"message":"", "success":True, "detail":check, "token":refresh_t}), 200
