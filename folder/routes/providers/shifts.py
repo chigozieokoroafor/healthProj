@@ -41,7 +41,7 @@ def fetchAllShifts():
 
         if request.method == "POST": # this is used to accept shifts
             shift_id = request.json.get("shift_id")
-            shifts.update_one({"_id":shift_id}, {"$set":{"provider_details.name":f'{user_check["FName"]} {user_check["LName"]}', "provider_details.user_id":user_id, "provider_details.img_url":user_check["image_url"]}})
+            shifts.update_one({"_id":shift_id}, {"$set":{"provider_details.name":f'{user_check["FName"]} {user_check["LName"]}', "provider_details.user_id":user_id, "provider_details.img_url":user_check["img_url"]}})
             return jsonify({"message":"Shift accepted", "success":True, "detail":{}, "token":refresh_t}), 200
     
     else:
