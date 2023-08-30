@@ -27,7 +27,8 @@ def home():
         try:
             user_cat = user_check["category"] #very important.
         except KeyError as e:
-            return jsonify({"detail":{}, "message":"User not a service provider not found", "success":False}), 400
+            return jsonify({"detail":{}, "message":"Kindly pick provider category user falls under", "success":False}), 400
+        
         cat_shifts = list(shifts.aggregate(
             [
                 {"$match":{"provider_category":user_cat,
