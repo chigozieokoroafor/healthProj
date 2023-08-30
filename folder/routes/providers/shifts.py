@@ -7,7 +7,7 @@ from bson import ObjectId
 prov_shifts = Blueprint("prov_shifts", __name__)
 
 #this get's all the shifts available for a particular category
-@prov_shifts.route("/shifts", methods=["GET"]) 
+@prov_shifts.route("/shifts", methods=["GET", "POST"]) 
 @Authentication.token_required
 def fetchAllShifts():
     token = request.headers.get("Authorization")
