@@ -96,7 +96,23 @@ def certs():
 @others.route("/categories", methods=["POST", "GET"])
 @Authentication.token_required
 def catSel():
-    pass
+    token = request.headers.get("Authorization")
+    decoded_data = jwt.decode(token, secret_key,algorithms=["HS256"])
+    refresh_t = Authentication.tokenExpCheck(decoded_data["exp"], decoded_data)
+    try:
+        user_id = decoded_data["id"]
+        user_type = decoded_data["u_type"]
+    except:
+        return jsonify({"message":"Unauthorized access", "success":False, "detail":{}}), 400
+
+    user_check = users.find_one({"_id":ObjectId(user_id), "role":"worker"})
+    if user_check != None:
+        if request.method == "GET":
+            misc.find_one({"tag":"categories"})
+        if request.method == "POST":
+            pass
+    else:
+        return jsonify({"message":"user not found", "success":False, "detail":{}, "token":""}), 400
 
 @others.route("/profile_info", methods = ["GET", "POST"])
 @Authentication.token_required
