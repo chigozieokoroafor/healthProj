@@ -108,9 +108,22 @@ def catSel():
     user_check = users.find_one({"_id":ObjectId(user_id), "role":"worker"})
     if user_check != None:
         if request.method == "GET":
-            misc.find_one({"tag":"categories"})
+            
+            it_check = misc.find_one({"tag":"categories"})
+            try:
+                data =  {"cat_list":it_check["categories"]}
+            except:
+                data = {"cat_list":[]}
+            return jsonify({"message":"", "detail":data, "success":True, "token":refresh_t}), 200
+        
         if request.method == "POST":
-            pass
+            category = request.json.get("category")
+            if category == None or category == "":
+                return jsonify({"message":"category cannot be empty", "success":False, "detail":{}, "token":refresh_t}), 400  
+            users.update_one({"_id":ObjectId(user_id)}, {"$set":{"category":category}})      
+            return jsonify({"message":"Category uploaded", "success":True, "detail":{}, "token":refresh_t})
+
+
     else:
         return jsonify({"message":"user not found", "success":False, "detail":{}, "token":""}), 400
 
