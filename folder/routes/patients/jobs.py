@@ -24,9 +24,13 @@ def sh():
     check = users.find_one({"_id":ObjectId(user_id)})
     if check != None:
         if request.method == "GET":
+            # put pagination here, limit of 10.
+
             shift_type = request.args.get("type")
-            users_shifts = shifts.find({"creator_id":user_id})
+            users_shifts = shifts.find({"creator_details._id":user_id})
             users_shifts = list(users_shifts)
+
+
             try:
                 
                 if shift_type == "active" or  shift_type == None:
@@ -40,8 +44,16 @@ def sh():
                 elif len(shift_list) <=  0 and shift_type != "active":
                     message = "No jobs have been completed"
                 
+                else:
+                    for i in shift_list:
+                        popping_items = ["creator_details", "status", "timestamp", "current_status", "tasks_list"]
+                        for x in popping_items:
+                            i.pop(x)
+                        
+                
 
                 return jsonify({"message":message, "detail":{"shifts":shift_list},"success":True, "token":refresh_t}), 200
+            
             except TypeError as e:
                 # print(e)
                 return jsonify({"message":"No active jobs created", "detail":{"shifts":[]}, "success":True, "token":refresh_t}), 200
@@ -118,7 +130,10 @@ def specJob(job_id):
         shift_data = shifts.find_one({"_id":job_id})
         if shift_data == None:
             return jsonify({"message":"Shift unavailable", "detail":{}, "success":True, "token":refresh_t}), 200
-        shift_data.pop("creator_id")
+        
+        popping_items = ["creator_details", "status", "timestamp", "current_status", "tasks_list"]
+        for x in popping_items:
+            shift_data.pop(x)
         return jsonify({"message":"", "detail":shift_data,"success":True, "token":refresh_t}), 200
             
 
@@ -145,8 +160,10 @@ def specJob(job_id):
         data["timestamp"] = datetime.timestamp(datetime.utcnow())
 
         shifts.update_one({"_id":job_id}, {"$set":data})
-        ch = shifts.find_one({"_id":user_id})
-        ch.pop("creator_id")
+        ch = shifts.find_one({"_id":job_id})
+        popping_items = ["creator_details", "status", "timestamp", "current_status", "tasks_list"]
+        for x in popping_items:
+            ch.pop(x)
         return jsonify({"message":"Job updated", "detail":ch,"success":True, "token":refresh_t}), 200
 
 
