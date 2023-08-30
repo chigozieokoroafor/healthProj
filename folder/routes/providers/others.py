@@ -37,8 +37,12 @@ def home():
             ]
             )
             )
+        
         for i in cat_shifts:
-            i.pop("creator_id")
+            popping_items = ["provider_details", "status", "timestamp", "current_status", "tasks_list"]
+            for x in popping_items:
+                i.pop(x)
+            
         data = {
             "wallet_balance":wallet_balance,
             "completed_shifts":completed_shifts, # this is a integer
