@@ -33,12 +33,9 @@ def fetchAllShifts():
             active_shifts = shifts.find({"provider_category":user_check["category"], "current_status":1}).skip(skip).limit(offset)
             ls = list(active_shifts)
             for i in ls:
-                i.pop("provider_category")
-                i.pop("tast_list")
-                i.pop("status")
-                i.pop("current_status")
-                i.pop("timestamp")
-                i.pop("creator_id")
+                popping_items = ["provider_details", "status", "timestamp", "current_status", "tasks_list"]
+                for x in popping_items:
+                    i.pop(x)
 
             return jsonify({"message":"", "success":True, "detail":{"shifts":ls}, "token":refresh_t}), 200
 
@@ -46,6 +43,7 @@ def fetchAllShifts():
             shift_id = request.json.get("_id")
             shifts.update_one({"_id":shift_id}, {"$set":{"provider_details.name":f'{user_check["FName"]} {user_check["LName"]}', "provider_details.user_id":user_id, "provider_details.img_url":user_check["image_url"]}})
             return jsonify({"message":"Shift accepted", "success":True, "detail":{}, "token":refresh_t}), 200
+    
     else:
         return  jsonify({"message":"Unauthorized Access", "success":False, "detail":{}}), 400
     
@@ -65,7 +63,9 @@ def handleShifts(shift_id):
     if user_check != None:
         if request.method == "GET":
             check = shifts.find_one({"_id":shift_id})
-            # popping_items = [""]
+            popping_items = ["provider_details", "status", "timestamp", "current_status", "tasks_list"]
+            for x in popping_items:
+                check.pop(x)
             return jsonify({"message":"", "success":True, "detail":check, "token":refresh_t}), 200
 
         if request.method == "PUT": # to update the progress or status of task
