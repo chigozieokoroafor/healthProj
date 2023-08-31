@@ -8,7 +8,7 @@ from datetime import datetime
 user_jobs = Blueprint("user_jobs", __name__)
 
 
-@user_jobs.route("/shifts", methods=["GET", "POST", "DELETE"])
+@user_jobs.route("/shifts", methods=["GET", "POST"])
 @Authentication.token_required
 def sh():
     token = request.headers.get("Authorization")
@@ -78,14 +78,16 @@ def sh():
             }
 
             tasks = info.get("tasks_list")  # list
-            if tasks != None or len(tasks) > 0:
-                ls = []
-                for i in tasks:
-                    task_data = {
-                        "task":i,
-                        "completed":False
-                    }
-                    ls.append(task_data)
+            if type(tasks) == list:
+                if len(tasks) > 0:
+                    ls = []
+                    for i in tasks:
+                        task_data = {
+                            "task":i,
+                            "completed":False,
+                            "t_id":tasks.index(i)
+                        }
+                        ls.append(task_data)
 
             data["tasks_list"] = ls
             data["creator_details"] = {
@@ -97,12 +99,10 @@ def sh():
             shifts.insert_one(data)
             return jsonify({"message":"Job uploaded", "detail":{},"success":True, "token":refresh_t}), 200
       
-        if request.method == "DELETE": # to cancel.
+        if request.method == "DELETE": # to delete a particular shift.
             job_id = request.json.get("job_id")
-            all_shifts = shifts.find_one({"_id":ObjectId(user_id)})
-            spec_shift = list(filter(lambda i: i["job_id"] == job_id, all_shifts["shifts"]))
-            if len(spec_shift) != 0:
-                if spec_shift[0]["current_status"] != "not_picked":
+            spec_shift = shifts.find_one({"_id":job_id})
+            if spec_shift["current_status"] != 1:
                     return jsonify({"message":"Job selected cannot be deleted as it has been taken up by a personnel", "detail":{},"success":False, "token":refresh_t}), 400
             shifts.update_one({"_id":ObjectId(user_id), "shifts.job_id":job_id}, {"$pull":{"shifts":{"job_id":job_id}}})
             return jsonify({"message":"Job Cancelled", "detail":{},"success":True, "token":refresh_t}), 200
@@ -131,7 +131,7 @@ def specJob(job_id):
         if shift_data == None:
             return jsonify({"message":"Shift unavailable", "detail":{}, "success":True, "token":refresh_t}), 200
         
-        popping_items = ["creator_details", "status", "timestamp", "current_status", "tasks_list"]
+        popping_items = ["creator_details", "status", "timestamp", "current_status"]
         for x in popping_items:
             shift_data.pop(x)
         return jsonify({"message":"", "detail":shift_data,"success":True, "token":refresh_t}), 200
@@ -147,14 +147,17 @@ def specJob(job_id):
             data[i] = info.get(i) 
         
         tasks = info.get("tasks_list")  # list
-        if tasks != None or len(tasks) > 0:
-            ls = []
-            for i in tasks:
-                task_data = {
-                    "task":i,
-                    "completed":False
-                }
-                ls.append(task_data)
+        if type(tasks) == list:
+            if len(tasks) > 0:
+                ls = []
+                for i in tasks:
+                    task_data = {
+                        "task":i,
+                        "completed":False,
+                        "t_id":tasks.index(i)
+                    }
+                    ls.append(task_data)
+        else: return jsonify({"message":"Kindly pass 'tasks_list' as a list", "detail":{},"success":False, "token":refresh_t}), 400
 
         data["tasks_list"] = ls
         data["timestamp"] = datetime.timestamp(datetime.utcnow())
@@ -169,8 +172,8 @@ def specJob(job_id):
 
     if request.method == "DELETE":
         spec_shift = shifts.find_one({"_id":job_id})
-        if spec_shift["current_status"] != "not_picked":
-                return jsonify({"message":"Job selected cannot be deleted as it has been taken up by a personnel", "detail":{},"success":False, "token":refresh_t}), 400
+        if spec_shift["current_status"] != 1:
+            return jsonify({"message":"Job selected cannot be deleted as it has been taken up by a personnel", "detail":{},"success":False, "token":refresh_t}), 400
         shifts.delete_one({"_id":job_id})
         return jsonify({"message":"Job Cancelled", "detail":{},"success":True, "token":refresh_t}), 200 
 

@@ -82,7 +82,7 @@ class Authentication:
             try:          
                 data = jwt.decode(bearer_token, secret_key,algorithms=["HS256"])
             except ExpiredSignatureError as e:
-                return jsonify({"message":"Token Expired", "succcess":False}), 400
+                return jsonify({"message":"Token Expired", "success":False}), 400
             except DecodeError as d:
                 return jsonify({"message":"Incorrect Token", "success":False}), 400
             return f(*args, **kwargs)
