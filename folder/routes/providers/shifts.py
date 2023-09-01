@@ -88,10 +88,11 @@ def handleShifts(shift_id):
                 if completed_check != None:
                     return jsonify({"message":"Kindly check of all items in the task list before marking as completed", "success":False, "detail":{}, "token":refresh_t}), 400
                 shifts.update_one({"_id":shift_id}, {"$set":{"current_status":3}})
+                
                     
             
 
-            return jsonify({"message":"Working", "success":True, "detail":{}, "token":refresh_t}), 200
+            return jsonify({"message":"Updated shift successfully", "success":True, "detail":{}, "token":refresh_t}), 200
 
         if request.method == "DELETE": # this is to quit a particular shift.
             shifts.update_one({"_id":shift_id}, {"$set":{"provider_details.name":"", "provider_details.user_id":"", "provider_details.img_url":default_image_url, "current_status":1}})
