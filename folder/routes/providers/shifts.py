@@ -53,7 +53,6 @@ def handleShifts(shift_id):
     refresh_t = Authentication.tokenExpCheck(decoded_data["exp"], decoded_data)
     try:
         user_id = decoded_data["id"]
-        user_type = decoded_data["u_type"]
     except:
         return jsonify({"message":"Unauthorized access", "success":False, "detail":{}}), 400
     
@@ -70,6 +69,26 @@ def handleShifts(shift_id):
             updateable_items = ["status", "task"]
             info =  request.json
             keys = [i for i in info.keys() if i in updateable_items]
+            if "task" in keys: # task is a list 
+                if type(info["task"]) == list:
+                    for x in info["task"]:
+                        query = {
+                            "_id":shift_id,
+                            "tasks_list.t_id":x
+                        }
+                        action = {"$set":{"tasks_list.$.completed":True}}
+
+                        shifts.update_one(query,action)
+                
+                else:
+                    return jsonify({"message":"'task' either not provided or not passed as list", "success":False, "detail":{}, "token":refresh_t}), 400
+                
+            if "status" in keys:
+                completed_check = shifts.find_one({"_id":shift_id, "tasks_list.completed":False})
+                if completed_check != None:
+                    return jsonify({"message":"Kindly check of all items in the task list before marking as completed", "success":False, "detail":{}, "token":refresh_t}), 400
+                shifts.update_one({"_id":shift_id}, {"$set":{"current_status":3}})
+                    
             
 
             return jsonify({"message":"Working", "success":True, "detail":{}, "token":refresh_t}), 200
@@ -92,24 +111,30 @@ def getUserShifts(shift_type):
     except:
         return jsonify({"message":"Unauthorized access", "success":False, "detail":{}}), 400
     
+
     user_check = users.find_one({"_id":ObjectId(user_id), "role":"worker"})
+    page = request.args.get("page")
+    offset = 10
+    if page==None:
+        page = 1
+    else:
+        page = int(page)
+    skip = (page-1)*offset
+
     if user_check != None:
-        
-            check = shifts.find({"provider_details.user_id":user_id})
+            action = {
+                "ongoing":shifts.find({"provider_details.user_id":user_id, "status":"active", "current_status":2}).skip(skip).limit(offset),
+                "completed":shifts.find({"provider_details.user_id":user_id, "current_status":3}).skip(skip).limit(offset)
+            }
+            check = action[shift_type]
             check =  list(check)
             
             popping_items = ["provider_details", "status", "timestamp", "current_status", "tasks_list", "provider_category"]
-            if shift_type == "ongoing":
-                u_shifts = list(filter(lambda i: i["status"] == "active" and i["current_status"] == 2, check))
-                
-
-            if shift_type == "completed":
-                u_shifts = list(filter(lambda i: i["status"] == "active" and i["current_status"] == 3, check))
             
-            if len(u_shifts)>0:
-                u_shifts = list(filter(lambda i: [i.pop(popping_items[0]), i.pop(popping_items[1]), i.pop(popping_items[2]), i.pop(popping_items[3]), i.pop(popping_items[4]), i.pop(popping_items[5])], u_shifts))
+            if len(check)>0:
+                check = list(filter(lambda i: [i.pop(popping_items[0]), i.pop(popping_items[1]), i.pop(popping_items[2]), i.pop(popping_items[3]), i.pop(popping_items[4]), i.pop(popping_items[5])], check))
             
-            return jsonify({"message":"", "success":True, "detail":{"shifts":u_shifts}, "token":refresh_t}), 200
+            return jsonify({"message":"", "success":True, "detail":{"shifts":check}, "token":refresh_t}), 200
     
     else:
         return  jsonify({"message":"Unauthorized Access", "success":False, "detail":{}}), 400
