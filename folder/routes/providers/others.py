@@ -52,7 +52,7 @@ def home():
     else:
         return jsonify({"detail":{}, "message":"User not found", "success":False}), 400
 
-@others.route("/certificates", methods=["GET", "POST"])
+@others.route("/certificates", methods=["GET", "POST", "PUT"])
 @Authentication.token_required
 def certs():
     token = request.headers.get("Authorization")
@@ -65,31 +65,65 @@ def certs():
         return jsonify({"message":"Unauthorized access", "success":False, "detail":{}}), 400
 
     user_check = users.find_one({"_id":ObjectId(user_id), "role":"worker"})
+    cred_check = credentials.find_one({"_id":ObjectId(user_id)})
+
     if user_check != None :
         if request.method == "GET":
             check = credentials.find_one({"_id":ObjectId(user_id)})
             if check != None:
-                return jsonify({"detail":{"credentials":check["credentials"]}, "token":refresh_t, "success":True, "message":""}), 200
+                filtered = list(filter(lambda i: [i.pop("timestamp")], check["credentials"]))
+                return jsonify({"detail":{"credentials":filtered}, "token":refresh_t, "success":True, "message":""}), 200
             else:return jsonify({"message":"No credentials uploaded", "success":True, "detail":{}, "token":refresh_t}), 200
+        
         if request.method == "POST":
             info = request.json
-            cert_url = info.get("cred_url")
-            cert_name = info.get("cred_name")
+            cert_url = info.get("cert_url")
+            cert_name = info.get("cert_name")
             date = datetime.utcnow()
             timestamp = datetime.timestamp(date)
-            date = date.date()
+            date = str(date.date())
             data = {
                 "cert_url":cert_url,
                 "cert_name":cert_name,
                 "date":date,
-                "timestamp":timestamp
+                "timestamp":timestamp,
+                "verified":False,
+                "c_id":0
             }
-            cred_check = credentials.find_one({"_id":ObjectId(user_id)})
+            
             if cred_check != None:
+                data["c_id"] = len(cred_check["credentials"])
                 credentials.update_one({"_id":ObjectId(user_id)}, {"$push":{"credentials":data}})
             else:
                 credentials.insert_one({"_id":ObjectId(user_id), "credentials":[data]})
             return jsonify({"message":"Credential uploaded", "success":True, "detail":{}, "token":refresh_t}), 200
+        
+# fix this request
+# it is n't being updated
+
+        if request.method == "PUT":
+            info = request.json
+            ls = ["cert_url", "cert_name"]
+            data = {}
+            for i in ls:
+                if info.get(i) != "" and info.get (i) != None:
+                    data["credentials.$."+i] =  info[i]
+            date = datetime.utcnow()
+            data["credentials.$.timestamp"] = datetime.timestamp(date)
+            data["credentials.$.date"] = str(date.date())
+
+            c_id =  info.get("c_id")   
+            check = list(filter(lambda i: [i["c_id"] == int(c_id), i["verified"]==True], cred_check["credentials"]))
+            
+            if len(check) == 0:
+                updated_data = credentials.find_one_and_update({"_id":ObjectId(user_id), "credentials.c_id":int(c_id)}, {"$set":data})           
+                new_update = list(filter(lambda i: i["c_id"] == int(c_id), updated_data["credentials"]))
+            
+                return jsonify({"message":"", "success":True, "detail":{"updated_":new_update[0]}, "token":refresh_t}), 200
+            else:
+                return jsonify({"message":"Credential cannot be updated, kindly message our customer care email", "success":False, "detail":{}, "token":refresh_t}), 400
+            
+            
     else:
         return jsonify({"message":"User not a service provider.", "success":False, "detail":{}}), 400
 

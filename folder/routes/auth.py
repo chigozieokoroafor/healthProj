@@ -58,7 +58,7 @@ def signup():
         data["pwd"] = pwd_hashed
         data["verified"] = False
         data["role"] = role
-        data["timestamp"] = datetime.datetime.now()
+        data["timestamp"] = datetime.datetime.timestamp(datetime.datetime.now())
         data["first_timer"] = True
         data["contact_info"] = {
             "zipcode":"", 
