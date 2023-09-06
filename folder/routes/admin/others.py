@@ -16,7 +16,7 @@ import os
 template_folder = os.getcwd() + "/folder/templates"
 
 admin_others = Blueprint("admin_others", __name__, template_folder=template_folder)
-s = URLSafeTimedSerializer(secret_key)
+
 
 @admin_others.route("/providersCategories", methods=['POST', "GET"])        
 @Authentication.token_required
@@ -27,7 +27,7 @@ def provCat():
         user_id = decoded_data["id"]
         user_type = decoded_data["u_type"]
     except:
-        return jsonify({"message":"Unauthorized access", "success":False}), 400
+        return jsonify({"message":"Unauthorized Access", "detail":{}, "success":False, "token":""}), 400
     admin_check = users.find_one({"_id":ObjectId(user_id), "role":"admin"})
 
     if admin_check!= None:
@@ -58,5 +58,6 @@ def provCat():
     
     else:
         return jsonify({"message":"Unauthorized Access", "detail":{}, "success":False, "token":""}), 400
+
 
     
