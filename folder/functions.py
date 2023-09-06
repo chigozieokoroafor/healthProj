@@ -174,4 +174,9 @@ def create_admin_key():
 
     else:
         misc.update_one({"tag":"admin_key"}, {"$set":{"key":hashed_password}})
-        
+
+def format_data(data:list):
+    for i in data:
+        i["_id"] = str(i["_id"])
+    return data
+    
