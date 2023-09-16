@@ -1,16 +1,12 @@
-from urllib.robotparser import RequestRate
-from flask import Blueprint, Response, jsonify, request, url_for, render_template_string, redirect, render_template, flash
-import pymongo
+from flask import Blueprint, jsonify, request, url_for, render_template_string, redirect, render_template
 from folder.config import users, misc, default_image_url
 from folder.functions import Authentication, secret_key
 from werkzeug.security import generate_password_hash, check_password_hash
 from pymongo.errors import DuplicateKeyError
-import jwt, bson, datetime,random, secrets
-from bson.errors import InvalidId
+import bson, datetime
 from itsdangerous import URLSafeTimedSerializer, SignatureExpired
-from bson import ObjectId
+
 import os
-# from flask_mail import Mail, Message
 
 
 template_folder = os.getcwd() + "/folder/templates"
@@ -20,7 +16,7 @@ s = URLSafeTimedSerializer(secret_key)
 
 
 @auth.route("/createAccount", methods=["POST"])
-def signup():
+def sign_up():
     info = request.json
     keys = [i for i in info.keys()]
     data = {}
@@ -42,7 +38,7 @@ def signup():
     # if role == "patient" or role == "worker":
         
     if role == "admin":
-        # user_check = users.find_one({"email":email, "role":"admin"})
+        
         fetch_key =  misc.find_one({"tag":"admin_key"})
         admin_key = request.json.get("admin_key")
         if admin_key == None:
@@ -73,16 +69,16 @@ def signup():
         data.pop("password")
         try:
             data.pop("admin_key")
-        except:
+        except Exception:
             pass
-        otp_Data = Authentication.generate_otp()
-        code = otp_Data["otp"]
+        otp_data = Authentication.generate_otp()
+        code = otp_data["otp"]
         temp = render_template("verification.html", code=code, year=datetime.datetime.utcnow().year)
-        token = s.dumps(otp_Data, salt="otpData")
+        token = s.dumps(otp_data, salt="otpData")
         data["s_t"] = token
         
         try :
-            mail_send = Authentication.mailSend(email, temp, "Verify Your Account")
+            mail_send = Authentication.mail_send(email, temp, "Verify Your Account")
             if mail_send["status"] == "success":
                 users.insert_one(data)
             else:
@@ -96,7 +92,7 @@ def signup():
         return jsonify(detail={}, success=False, message="Account with email address provided exists"), 400
 
 @auth.route("/emailCheck", methods=["POST"])
-def emailCheck():
+def emailcheck():
     email = request.json.get("email")
 
     email_check = users.find({"email":email})
@@ -133,7 +129,7 @@ def signin():
             user.pop("pwd")
             try:
                 user.pop("s_t")
-            except:
+            except Exception as e:
                 pass
             
             return jsonify({"detail":user, "success":True, "message":message}), 200
@@ -148,8 +144,8 @@ def email_verification():
     token = s.dumps(email, salt="email_confirm")
     url = url_for("providers.auth.confirm_email", token=token, _external=True)
     temp = render_template("reset_mail.html", action_url=url) 
-    # link = url_for("auth.confirm_email", token=token, _external=True)
-    st = Authentication.mailSend(email, str(temp), "Verify your account")
+    
+    st = Authentication.mail_send(email, str(temp), "Verify your account")
     if st["status"] == "success":
         return jsonify({"detail":{}, "success":True, "message":"use verification link sent to mail provided"}), 200
     else:
@@ -166,7 +162,7 @@ def confirm_email(token):
             users.find_one_and_update({"email":email},{"$set":{"verified":True}})
             return redirect("https://github.com"), 302 # change this
         else:
-            url = url_for("providers.auth.resPass", token=token, _external=True)
+            url = url_for("providers.auth.res_pass", token=token, _external=True)
             return render_template("pwd_reset.html", post_url=url),  200
             # user would be redirected to password reset page
         
@@ -176,35 +172,33 @@ def confirm_email(token):
 
 
 @auth.route("/postPassword", methods=["POST"])
-def resPass():
+def res_pass():
     if request.method == "POST":
         token = request.args.get("token")
         email = s.loads(token, salt="email_confirm", max_age=300 )
         password = request.form.get("newPassword")
         hashed_pwd = generate_password_hash(password, "pbkdf2:sha256")
         users.update_one({"email":email}, {"$set":{"pwd":hashed_pwd, "verified":True}})
-        #email = request.form.get("ema")
-        # return redirect("https://github.com"), 302
         return jsonify({"detail":{}, "success":True, "message":"Password Successfully Updated"}), 200
 
 
 @auth.route("/sendOTP", methods=["POST"])
-def sendOTP():
+def send_otp():
     email = request.json.get("email")
     check = users.find({"email":email})
     if check != None:
-        otp_Data = Authentication.generate_otp()
-        code = otp_Data["otp"]
+        otp_data = Authentication.generate_otp()
+        code = otp_data["otp"]
         temp = render_template("verification.html", code=code)
-        token = s.dumps(otp_Data, salt="otpData")
-        Authentication.mailSend(email, temp, "OTP Verification")
+        token = s.dumps(otp_data, salt="otpData")
+        Authentication.mail_send(email, temp, "OTP Verification")
         users.update_one({"email":email}, {"$set":{"s_t":token}})
         return jsonify({"detail":{}, "success":True, "message":"OTP Sent"}), 200
     return jsonify({"detail":{}, "success":False, "message":f"No account found for '{email}'"}), 400 
 
 
 @auth.route("/verifyOTP", methods=["POST"])
-def verOTP():
+def ver_otp():
     email = request.json.get("email")
     otp = request.json.get("otp")
     check = users.find_one({"email":email})
@@ -213,12 +207,12 @@ def verOTP():
         try:
             t_data = s.loads(token, salt="otpData", max_age=600)
         except SignatureExpired as e:
-            return jsonify({"detail":f"The OTP provided has expired.", "success":False}), 400 
+            return jsonify({"detail":"The OTP provided has expired.", "success":False}), 400 
         verify = False
         if t_data["otp"] == otp:
             verify = True
     if verify == True:
         users.update_one({"email":email}, {"$set":{"s_t":"", "verified":True}})
-        return jsonify({"detail":{}, "success":True, "message":f"Account verified"}), 200
+        return jsonify({"detail":{}, "success":True, "message":"Account verified"}), 200
     return jsonify({"detail":{}, "success":False, "message":"Incorrect OTP"}), 400
             

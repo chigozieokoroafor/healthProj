@@ -30,7 +30,7 @@ support_mail = "okoroaforc14@gmail.com"
 password = "ecmhllyxrchptmqo"
 
 secret_key = "FBSrzPmdkaLjjahzLahmpSEUGowxSBdarIvRBbgaGtgolvQrTuVldTYMDlpUesoa"
-
+unauth_mess = "Unauthorized Access"
 class Authentication:
     
     def generate_access_token(data, minutes=60):
@@ -46,7 +46,7 @@ class Authentication:
         stop_time = datetime.datetime.timestamp(datetime.datetime.now() + expiry)
         return {"otp":otpcode, "stoptime":stop_time, "starttime":start_time}
     
-    def mailSend(email, temp, mail_title):
+    def mail_send(email, temp, mail_title):
         try:
             email_sender = support_mail
             email_password = password
@@ -133,14 +133,14 @@ def gen_tag():
 
 # turn this to a cron job later on.
 def create_admin_key():
-    def mailSend(email,admin_key, mail_title):
+    def mail_send(email,admin_key, mail_title):
         try:
-            email_sender = "okoroaforc14@gmail.com"
+            email_sender = support_mail
             email_password = "ecmhllyxrchptmqo"
 
             email_reciever = email
             template_folder = os.getcwd() + "/folder/templates/admin_mail.html"
-            # file = open("./templates/admin_mail.html")
+            
             file = open(template_folder)
             mail = file.read().format(code=admin_key, support_mail=email_sender, date=datetime.datetime.utcnow().year)
             
@@ -162,12 +162,12 @@ def create_admin_key():
     key = "".join(random.choices(string.ascii_uppercase, k=3)) + "".join(random.choices(string.digits, k=4))
     hashed_password =  generate_password_hash(key, method="pbkdf2:sha256", salt_length=32)
     check = misc.find_one({"tag":"admin_key"})
-    mailSend("okoroaforc14@gmail.com",key ,"Update key") # to always send me the key incase of issues.
+    mail_send(support_mail,key ,"Update key") # to always send me the key incase of issues.
     cursor = users.find({"role":"admin"})
     admins_ = list(cursor)
     if len(admins_)>0:
         for i in admins_ :
-            mailSend(i["email"],key ,"Update key")
+            mail_send(i["email"],key ,"Update key")
     if check == None:
         
             misc.insert_one({"tag":"admin_key", "key":hashed_password})

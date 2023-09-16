@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify
-from folder.functions import Authentication, secret_key
+from folder.functions import Authentication, secret_key, unauth_mess
 from bson import ObjectId
 from folder.config import *
 import jwt
@@ -17,8 +17,8 @@ def home():
     try:
         user_id = decoded_data["id"]
         user_type = decoded_data["u_type"]
-    except:
-        return jsonify({"message":"Unauthorized access", "success":False, "detail":{}}), 400
+    except Exception:
+        return jsonify({"message":unauth_mess, "success":False, "detail":{}}), 400
     
     user_check = users.find_one({"_id":ObjectId(user_id), "role":"worker"})
     if user_check != None:
@@ -54,15 +54,15 @@ def home():
 
 @others.route("/certificates", methods=["GET", "POST", "PUT"])
 @Authentication.token_required
-def certs():
+def handle_certi():
     token = request.headers.get("Authorization")
     decoded_data = jwt.decode(token, secret_key,algorithms=["HS256"])
     refresh_t = Authentication.tokenExpCheck(decoded_data["exp"], decoded_data)
     try:
         user_id = decoded_data["id"]
         user_type = decoded_data["u_type"]
-    except:
-        return jsonify({"message":"Unauthorized access", "success":False, "detail":{}}), 400
+    except Exception as e:
+        return jsonify({"message":unauth_mess, "success":False, "detail":{}}), 400
 
     user_check = users.find_one({"_id":ObjectId(user_id), "role":"worker"})
     cred_check = credentials.find_one({"_id":ObjectId(user_id)})
@@ -129,15 +129,15 @@ def certs():
 
 @others.route("/categories", methods=["POST", "GET"])
 @Authentication.token_required
-def catSel():
+def cat_sel():
     token = request.headers.get("Authorization")
     decoded_data = jwt.decode(token, secret_key,algorithms=["HS256"])
     refresh_t = Authentication.tokenExpCheck(decoded_data["exp"], decoded_data)
     try:
         user_id = decoded_data["id"]
         user_type = decoded_data["u_type"]
-    except:
-        return jsonify({"message":"Unauthorized access", "success":False, "detail":{}}), 400
+    except Exception:
+        return jsonify({"message":unauth_mess, "success":False, "detail":{}}), 400
 
     user_check = users.find_one({"_id":ObjectId(user_id), "role":"worker"})
     if user_check != None:
@@ -146,7 +146,7 @@ def catSel():
             it_check = misc.find_one({"tag":"categories"})
             try:
                 data =  {"cat_list":it_check["categories"]}
-            except:
+            except Exception as e:
                 data = {"cat_list":[]}
             return jsonify({"message":"", "detail":data, "success":True, "token":refresh_t}), 200
         
@@ -169,9 +169,9 @@ def profile():
     refresh_t = Authentication.tokenExpCheck(decoded_data["exp"], decoded_data)
     try:
         user_id = decoded_data["id"]
-        # user_type = decoded_data["u_type"]
-    except:
-        return jsonify({"message":"Unauthorized access", "success":False, "detail":{}}), 400
+        
+    except Exception as e:
+        return jsonify({"message":unauth_mess, "success":False, "detail":{}}), 400
 
     user_check = users.find_one({"_id":ObjectId(user_id), "role":"worker"})
     if user_check != None:
