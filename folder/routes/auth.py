@@ -243,11 +243,18 @@ def ver_otp():
             t_data = s.loads(token, salt="otpData", max_age=600)
         except SignatureExpired as e:
             return jsonify({"detail":"The OTP provided has expired.", "success":False}), 400 
+        initial_verify = check["verified"]
         verify = False
         if t_data["otp"] == otp:
             verify = True
     if verify == True:
+        data = {}
+        if initial_verify != True and check["role"] == "worker":
+            d = {"id": str(check["_id"]), "u_type":check["role"]}
+            token = Authentication.generate_access_token(d)
+            data = {"token":token}
+            
         users.update_one({"email":email}, {"$set":{"s_t":"", "verified":True}})
-        return jsonify({"detail":{}, "success":True, "message":"Account verified"}), 200
+        return jsonify({"detail":data, "success":True, "message":"Account verified"}), 200
     return jsonify({"detail":{}, "success":False, "message":"Incorrect OTP"}), 400
             

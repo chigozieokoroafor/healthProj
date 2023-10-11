@@ -1,4 +1,4 @@
-from  pymongo import MongoClient
+# from  pymongo import MongoClient
 from dotenv import load_dotenv
 import os, pymongo
 
@@ -13,8 +13,8 @@ statuses = {
     3: "Completed" #, # for completed tasks
     # 4: "Picked" # this are tasks that have been picked
 }
-
-client = MongoClient(connection_string)
+print(connection_string)
+client = pymongo.MongoClient(connection_string)
 db = client["healthManager"]
 users = db["users"]
 medical_info = db["medRecords"]
