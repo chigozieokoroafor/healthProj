@@ -9,7 +9,7 @@ import jwt, bson, datetime,random, secrets
 from bson.errors import InvalidId
 from itsdangerous import URLSafeTimedSerializer, SignatureExpired
 from bson import ObjectId
-import os
+import os, typing
 # from flask_mail import Mail, Message
 
 
@@ -52,6 +52,7 @@ def prov_cat():
                 misc.update_one({"tag":"categories"}, {"$push":pushed_data})
             else:
                 pushed_data["tag"] = "categories"
+                pushed_data["categories"] = [pushed_data["categories"]]
                 misc.insert_one(pushed_data)
             return jsonify({"message":"New Service Provider Category uploaded.", "detail":{}, "success":True, "token":""}), 200
 
@@ -63,7 +64,7 @@ def prov_cat():
     else:
         return jsonify({"message":unauth_mess, "detail":{}, "success":False, "token":""}), 401
 
-@admin_others.route("providerCredentials", methods=["POST", "GET", "PUT", "DELETE"])
+@admin_others.route("categoryCredentials", methods=["POST", "GET", "PUT", "DELETE"])
 @Authentication.token_required
 def prov_credentials():
     token =  request.headers.get("Authorization")
@@ -78,27 +79,29 @@ def prov_credentials():
         if request.method == "GET":
             cred_check = misc.find_one({"tag":"credentials"})
             try:
-                data =  {"cred_list":cred_check["prov_cred"]}
+                data =  {"cred_list":cred_check["cred_list"]}
             except Exception:
                 data = {"cred_list":[]}
             return jsonify({"message":"", "detail":data, "success":True, "token":""}), 200
 
         if request.method == "POST":
+            # type provider_category = str
             provider_category = request.json.get("category")
             credentials = request.json.get("credentials") # this is a list of credentials
 
             data = {
-                "cred_list":{
+                "cred_list":
                     {"category":provider_category,
                      "credentials":credentials}
                 }
-            }
+            
 
             cred_check = misc.find_one({"tag":"credentials"})
             if cred_check != None:
                 misc.find_one_and_update({"tag":"credentials"}, {"$push":data})
             else:
                 data["tag"] = "credentials"
+                data["cred_list"] = [data["cred_list"]]
                 misc.insert_one(data)
             return jsonify({"message":"Service provider required credentials uploaded.", "detail":{}, "success":True, "token":""}), 200 
             
