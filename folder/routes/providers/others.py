@@ -4,9 +4,17 @@ from bson import ObjectId
 from folder.config import *
 import jwt
 from datetime import datetime
+from werkzeug.utils import secure_filename
 
 others =  Blueprint("prov_others", __name__)
+ALLOWED_EXTENSIONS = {'txt', 'pdf', 'png', 'jpg', 'jpeg', 'gif'}
 
+
+
+# print(others.config)
+def allowed_file(filename):
+    return '.' in filename and \
+           filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 # gets 5 random available shifts the provider falls under along  with a totality of his completed shifts and wallet_balance
 @others.route("/home")
 @Authentication.token_required
@@ -60,9 +68,9 @@ def handle_certi():
     refresh_t = Authentication.tokenExpCheck(decoded_data["exp"], decoded_data)
     try:
         user_id = decoded_data["id"]
-        user_type = decoded_data["u_type"]
+        # user_type = decoded_data["u_type"]
     except Exception as e:
-        return jsonify({"message":unauth_mess, "success":False, "detail":{}}), 400
+        return jsonify({"message":unauth_mess, "success":False, "detail":{}}), 401
 
     user_check = users.find_one({"_id":ObjectId(user_id), "role":"worker"})
     cred_check = credentials.find_one({"_id":ObjectId(user_id)})
@@ -137,7 +145,7 @@ def cat_sel():
         user_id = decoded_data["id"]
         user_type = decoded_data["u_type"]
     except Exception:
-        return jsonify({"message":unauth_mess, "success":False, "detail":{}}), 400
+        return jsonify({"message":unauth_mess, "success":False, "detail":{}}), 401
 
     user_check = users.find_one({"_id":ObjectId(user_id), "role":"worker"})
     if user_check != None:
@@ -161,6 +169,32 @@ def cat_sel():
     else:
         return jsonify({"message":"user not found", "success":False, "detail":{}, "token":""}), 400
 
+@others.route("/uploadFile", methods=["POST"])
+def file_upload():
+    file_ = request.files.get("cred")
+    # file_.filename = "new_x.jpg"
+    file_name = secure_filename(file_.filename)
+    path = os.path.join(credentials_file_upload, file_name)
+    print(os.path.exists(path))
+    # file_.save()
+    return "True", 200
+
+# @app.route('/upFile', methods=['GET', 'POST'])
+# def upload_file():
+#     if request.method == 'POST':
+#         # check if the post request has the file part
+#         if 'file' not in request.files:
+#             return "false", 400
+#         file = request.files['file']
+#         # If the user does not select a file, the browser submits an
+#         # empty file without a filename.
+#         if file.filename == '':
+#             return "false", 400
+#         if file and allowed_file(file.filename):
+#             filename = secure_filename(file.filename)
+#             file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+#             return redirect(url_for('download_file', name=filename))
+
 @others.route("/profile_info", methods = ["GET", "POST"])
 @Authentication.token_required
 def profile():
@@ -171,7 +205,7 @@ def profile():
         user_id = decoded_data["id"]
         
     except Exception as e:
-        return jsonify({"message":unauth_mess, "success":False, "detail":{}}), 400
+        return jsonify({"message":unauth_mess, "success":False, "detail":{}}), 401
 
     user_check = users.find_one({"_id":ObjectId(user_id), "role":"worker"})
     if user_check != None:

@@ -13,7 +13,11 @@ template_folder = os.getcwd() + "/folder/templates"
 
 auth = Blueprint("auth", __name__, template_folder=template_folder)
 s = URLSafeTimedSerializer(secret_key)
-
+tags = {
+    "provider":"worker",
+    "patient":"patient",
+    "admin":"admin"
+}
 
 @auth.route("/createAccount", methods=["POST"])
 def sign_up():
@@ -103,46 +107,81 @@ def emailcheck():
     message = jsonify({"detail":{},"success":True, "message":"Email address can be used."}),200
     return message
 
-@auth.route("/signin/patient", methods=["POST"])
-def signin():
-    info = request.json
-    email = info.get("email")
-    password = info.get("password")
-    user_check = users.find_one({"email":email, "role":"patient"})
+# @auth.route("/signin/patient", methods=["POST"])
+# def signin():
+#     info = request.json
+#     email = info.get("email")
+#     password = info.get("password")
+#     user_check = users.find_one({"email":email, "role":"patient"})
     
-    if user_check != None :
-        user = user_check
-        pwd_check = check_password_hash(user["pwd"], password)
-        if pwd_check:
-            user_id = str(bson.ObjectId(user["_id"]))
-            d = {"id": user_id, "u_type":user["role"]}
-            # print(d)
-            token = Authentication.generate_access_token(d)
-            user["token"] = token
-            message = ""
-            if user["verified"] == False:
-                user["token"] = ""
-                message = "Kindly verify email address"
-                return jsonify({"detail":{"verified":False}, "success":True, "message":message}), 200
-            users.update_one({"_id":user["_id"]}, {"$set":{"first_timer":False}})
-            user.pop("_id")
-            user.pop("pwd")
-            try:
-                user.pop("s_t")
-            except Exception as e:
-                pass
+#     if user_check != None :
+#         user = user_check
+#         pwd_check = check_password_hash(user["pwd"], password)
+#         if pwd_check:
+#             user_id = str(bson.ObjectId(user["_id"]))
+#             d = {"id": user_id, "u_type":user["role"]}
+#             # print(d)
+#             token = Authentication.generate_access_token(d)
+#             user["token"] = token
+#             message = ""
+#             if user["verified"] == False:
+#                 user["token"] = ""
+#                 message = "Kindly verify email address"
+#                 return jsonify({"detail":{"verified":False}, "success":True, "message":message}), 200
+#             users.update_one({"_id":user["_id"]}, {"$set":{"first_timer":False}})
+#             user.pop("_id")
+#             user.pop("pwd")
+#             try:
+#                 user.pop("s_t")
+#             except Exception as e:
+#                 pass
             
-            return jsonify({"detail":user, "success":True, "message":message}), 200
-        return jsonify({"detail":{}, "success":False, "message":"Email and password do not match"}), 401
+#             return jsonify({"detail":user, "success":True, "message":message}), 200
+#         return jsonify({"detail":{}, "success":False, "message":"Email and password do not match"}), 401
         
-    return jsonify({"detail": {}, "success":False, "message":f"Account not found for {email}"}), 404
+#     return jsonify({"detail": {}, "success":False, "message":f"Account not found for {email}"}), 404
 
-@auth.route("/signin/provider", methods=["POST"])
-def signin_provider():
+# @auth.route("/signin/provider", methods=["POST"])
+# def signin_provider():
+#     info = request.json
+#     email = info.get("email")
+#     password = info.get("password")
+#     user_check = users.find_one({"email":email, "role":"worker"})
+    
+#     if user_check != None :
+#         user = user_check
+#         pwd_check = check_password_hash(user["pwd"], password)
+#         if pwd_check:
+#             user_id = str(bson.ObjectId(user["_id"]))
+#             d = {"id": user_id, "u_type":user["role"]}
+#             # print(d)
+#             token = Authentication.generate_access_token(d)
+#             user["token"] = token
+#             message = ""
+#             if user["verified"] == False:
+#                 user["token"] = ""
+#                 message = "Kindly verify email address"
+#                 return jsonify({"detail":{"verified":False}, "success":True, "message":message}), 200
+#             users.update_one({"_id":user["_id"]}, {"$set":{"first_timer":False}})
+#             user.pop("_id")
+#             user.pop("pwd")
+#             try:
+#                 user.pop("s_t")
+#             except Exception as e:
+#                 pass
+            
+#             return jsonify({"detail":user, "success":True, "message":message}), 200
+#         return jsonify({"detail":{}, "success":False, "message":"Email and password do not match"}), 401
+        
+#     return jsonify({"detail": {}, "success":False, "message":f"Account not found for {email}"}), 404
+
+@auth.route("/signin/<u_type>", methods=["POST"])
+def signin_admin(u_type):
     info = request.json
     email = info.get("email")
     password = info.get("password")
-    user_check = users.find_one({"email":email, "role":"worker"})
+    worker_type = tags[u_type]
+    user_check = users.find_one({"email":email, "role":worker_type})
     
     if user_check != None :
         user = user_check

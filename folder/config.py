@@ -13,7 +13,6 @@ statuses = {
     3: "Completed" #, # for completed tasks
     # 4: "Picked" # this are tasks that have been picked
 }
-print(connection_string)
 client = pymongo.MongoClient(connection_string)
 db = client["healthManager"]
 users = db["users"]
@@ -26,3 +25,4 @@ exp_cert = db["exp_cert"]
 users.create_index("email", unique=True)
 
 default_image_url = "https://res.cloudinary.com/dgpnmwhra/image/upload/v1674042300/neutron_images/base_photo_rqyzlb.png"
+credentials_file_upload = os.getcwd()+"/folder/credentials"

@@ -5,11 +5,14 @@ from folder.routes.admin import admin
 from folder.routes.patients import patient
 from folder.routes.providers import provider
 from folder.routes.auth import auth
+import os
 # from flask_mail import Mail
 
 app = Flask(__name__)
-
+cwd = os.getcwd()
 app.config["SECRET_KEY"] = secret_key
+app.config["UPLOAD_FOLDER"] = cwd + "/folder/credentials"
+# print(app.config["UPLOAD_FOLDER"])
 # app.config['MAIL_SERVER'] = 'smtp.gmail.com'
 # app.config['MAIL_PORT'] = 465
 # app.config['MAIL_USE_SSL'] = True

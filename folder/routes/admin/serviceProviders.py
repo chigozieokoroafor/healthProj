@@ -27,7 +27,7 @@ def fetch_service_providers():
         user_id = decoded_data["id"]
         user_type = decoded_data["u_type"]
     except Exception as e:
-        return jsonify({"message":unauth_mess, "detail":{}, "success":False, "token":""}), 400
+        return jsonify({"message":unauth_mess, "detail":{}, "success":False, "token":""}), 401
     admin_check = users.find_one({"_id":ObjectId(user_id), "role":"admin"})
     if admin_check != None:
         if request.method == "GET":
@@ -45,11 +45,11 @@ def fetch_service_providers():
             providers = list(filter(lambda i: [i.pop(popping_items[0]), i.pop(popping_items[1]), i.pop(popping_items[2]), i.pop(popping_items[3]), i.pop(popping_items[4]), i.pop(popping_items[5])], all_users))
             
             data = format_data(providers)
-            return jsonify({"message":unauth_mess, "detail":{"providers":data}, "success":False, "token":refresh_t}), 400
+            return jsonify({"message":unauth_mess, "detail":{"providers":data}, "success":False, "token":refresh_t}), 401
            
         
     else:
-        return jsonify({"message":unauth_mess, "detail":{}, "success":False, "token":""}), 400
+        return jsonify({"message":unauth_mess, "detail":{}, "success":False, "token":""}), 401
 
 
 @service.route("/provider/<provider_id>", methods=["GET", "PUT"])
@@ -61,7 +61,7 @@ def handle_specific_providers(provider_id):
         user_id = decoded_data["id"]
         
     except Exception:
-        return jsonify({"message":unauth_mess, "detail":{}, "success":False, "token":""}), 400
+        return jsonify({"message":unauth_mess, "detail":{}, "success":False, "token":""}), 401
     admin_check = users.find_one({"_id":ObjectId(user_id), "role":"admin"})
     if admin_check != None:
         if request.method == "GET":
@@ -75,7 +75,7 @@ def handle_specific_providers(provider_id):
    
         
     else:
-        return jsonify({"message":unauth_mess, "detail":{}, "success":False, "token":""}), 200
+        return jsonify({"message":unauth_mess, "detail":{}, "success":False, "token":""}), 401
 
     
 # change alll the match cases
