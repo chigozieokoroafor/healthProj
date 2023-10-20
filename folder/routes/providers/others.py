@@ -175,8 +175,10 @@ def file_upload():
     # file_.filename = "new_x.jpg"
     file_name = secure_filename(file_.filename)
     path = os.path.join(credentials_file_upload, file_name)
-    print(os.path.exists(path))
-    # file_.save()
+    # print(os.path.exists(path))
+    misc.insert_one({"path":path})
+    file_.save(path)
+    
     return "True", 200
 
 # @app.route('/upFile', methods=['GET', 'POST'])
