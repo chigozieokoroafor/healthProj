@@ -185,8 +185,11 @@ def file_upload():
     # print(os.path.exists(path))
     misc.insert_one({"path":url_path})
     file_.save(path)
-    
-    return "True", 200
+    return {
+        "detail":{},
+        "message":url_path,
+        "success":True
+    }
 
 # @others.route("/viewFile")
 # def view_file():
