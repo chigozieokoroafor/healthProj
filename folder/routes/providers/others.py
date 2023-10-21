@@ -1,10 +1,13 @@
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, send_from_directory
 from folder.functions import Authentication, secret_key, unauth_mess
 from bson import ObjectId
 from folder.config import *
 import jwt
 from datetime import datetime
 from werkzeug.utils import secure_filename
+import pathlib
+
+
 
 others =  Blueprint("prov_others", __name__)
 ALLOWED_EXTENSIONS = {'txt', 'pdf', 'png', 'jpg', 'jpeg', 'gif'}
@@ -172,7 +175,7 @@ def cat_sel():
 @others.route("/uploadFile", methods=["POST"])
 def file_upload():
     file_ = request.files.get("cred")
-    # file_.filename = "new_x.jpg"
+    file_.filename = "new_x.jpg"
     file_name = secure_filename(file_.filename)
     path = os.path.join(credentials_file_upload, file_name)
     # print(os.path.exists(path))
@@ -180,6 +183,18 @@ def file_upload():
     file_.save(path)
     
     return "True", 200
+
+@others.route("/viewFile")
+def view_file():
+    absolute_path_string = os.path.join(credentials_file_upload, "new_x.jpg")
+    x = "True"
+    # x = send_from_directory(credentials_file_upload, )
+    url_path = pathlib.Path(absolute_path_string).as_uri()
+    return {
+        "detail":{},
+        "message":url_path,
+        "success":True
+    }
 
 # @app.route('/upFile', methods=['GET', 'POST'])
 # def upload_file():
