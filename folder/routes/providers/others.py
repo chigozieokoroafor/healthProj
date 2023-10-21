@@ -177,24 +177,27 @@ def file_upload():
     file_ = request.files.get("cred")
     file_.filename = "new_x.jpg"
     file_name = secure_filename(file_.filename)
+    path_check = os.path.exists(credentials_file_upload)
+    if path_check == False:
+        os.mkdir(credentials_file_upload)
     path = os.path.join(credentials_file_upload, file_name)
+    url_path = pathlib.Path(path).as_uri()
     # print(os.path.exists(path))
-    misc.insert_one({"path":path})
+    misc.insert_one({"path":url_path})
     file_.save(path)
     
     return "True", 200
 
-@others.route("/viewFile")
-def view_file():
-    absolute_path_string = os.path.join(credentials_file_upload, "new_x.jpg")
-    x = "True"
-    # x = send_from_directory(credentials_file_upload, )
-    url_path = pathlib.Path(absolute_path_string).as_uri()
-    return {
-        "detail":{},
-        "message":url_path,
-        "success":True
-    }
+# @others.route("/viewFile")
+# def view_file():
+#     absolute_path_string = os.path.join(credentials_file_upload, "new_x.jpg")
+#     # x = send_from_directory(credentials_file_upload, )
+#     url_path = pathlib.Path(absolute_path_string).as_uri()
+#     return {
+#         "detail":{},
+#         "message":url_path,
+#         "success":True
+#     }
 
 # @app.route('/upFile', methods=['GET', 'POST'])
 # def upload_file():
