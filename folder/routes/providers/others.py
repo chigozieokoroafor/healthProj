@@ -1,4 +1,4 @@
-from flask import Blueprint, request, jsonify, send_from_directory
+from flask import Blueprint, request, jsonify, send_from_directory, url_for
 from folder.functions import Authentication, secret_key, unauth_mess
 from bson import ObjectId
 from folder.config import *
@@ -6,6 +6,7 @@ import jwt
 from datetime import datetime
 from werkzeug.utils import secure_filename
 import pathlib
+from urllib.parse import urlparse, urlunparse
 
 
 
@@ -175,21 +176,27 @@ def cat_sel():
 @others.route("/uploadFile", methods=["POST"])
 def file_upload():
     file_ = request.files.get("cred")
-    file_.filename = "new_x.jpg"
+    # file_.filename = "new_x.jpg"
     file_name = secure_filename(file_.filename)
     path_check = os.path.exists(credentials_file_upload)
     if path_check == False:
         os.mkdir(credentials_file_upload)
     path = os.path.join(credentials_file_upload, file_name)
-    url_path = pathlib.Path(path).as_uri()
+    # url_path = pathlib.Path(path).as_uri()
     # print(os.path.exists(path))
-    misc.insert_one({"path":url_path})
+    # print(urlunparse(urlparse(url_path)._replace(scheme="file")))
+    # misc.insert_one({"path":url_path})
     file_.save(path)
+    url_path = url_for("provider.prov_others.view_file",filename = file_.filename, external=True)
     return {
         "detail":{},
         "message":url_path,
         "success":True
     }
+
+@others.route("/viewfile/<filename>", methods=["GET"])
+def view_file(filename):
+    return send_from_directory(credentials_file_upload,filename)
 
 # @others.route("/viewFile")
 # def view_file():
