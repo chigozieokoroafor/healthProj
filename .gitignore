@@ -3,5 +3,6 @@ newvenv
 __pycache__
 *env
 .env
-file.ipynb
+*.ipynb
 credentials
+folder/routes/gen.py
